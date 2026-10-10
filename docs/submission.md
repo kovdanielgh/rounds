@@ -60,7 +60,7 @@ Your yield plays, your money stays.
 
 ## What works today (Monad testnet)
 
-- Rounds open automatically: a quick SOL round every hour, a BTC Bulls vs Bears pair every 6 hours, daily ETH and MON rounds.
+- Rounds open automatically: quick SOL (rollover) and ZEC rounds every hour, a BTC Bulls vs Bears pair every 6 hours, the ETH Round of the day, a daily MON round and the weekly ETH jackpot.
 - Each round opens a real 3x–15x position on Perpl when entry closes and closes it at settle.
 - **Rollover:** in the hourly SOL series a won prize pool is not drawn. It rolls into the next round and trades again on Perpl, up to 3 rounds in a row, then the big pool is drawn. Rarer, bigger prizes from the same yield.
 - **Jackpot of the week:** the pool grows by 50 USD after every week nobody wins.
@@ -93,13 +93,14 @@ Testnet only. The legal structure (prize-linked savings vs. a market) is under r
 
 | Kind of round | What the yield buys | Prize multiple | Status |
 |---|---|---|---|
-| Perp on Perpl | a 3x–15x long or short | ×1 … ×3 | **live** |
+| Perp on Perpl | a 3x–15x long or short on BTC, ETH, SOL, MON, ZEC | ×1 … ×3 | **live** |
 | Rollover | the won pool trades again in the next round, up to 3 in a row | ×3 … ×9 | **live** (hourly SOL) |
 | Growing jackpot | the pool grows every week nobody wins | up to ×5 | **live** (weekly ETH) |
+| More perps: stocks and pre-IPO | NVDA, TSLA, SpaceX (SPCX), indexes, gold: "NVDA up after earnings?" | ×1 … ×3 | when Perpl or Robinhood Chain lists them; same engine |
+| Event rounds on prediction markets | the yield buys outcome shares: Fed decision, elections, sports | ×2 … ×20 | when a prediction market goes live on Monad |
 | Turbo on Perpl | a perp that adds its profit back to the position at each step (convex, like a call option) | ×1 … ×20 | next: an engine update |
 | New-token basket on Kuru or nad.fun | 5–10 new Monad tokens, sold at the end | ×0 … ×100 | mainnet: no liquidity on testnet |
 | Out-of-the-money options | calls or puts | ×10 … ×50 | when an options venue goes live on Monad |
-| Outcome tokens | "yes" shares at 5 cents | ×20 | when a large prediction market goes live on Monad |
 
 **Product:**
 1. Mainnet with Aave AUSD as the yield source (recommended by Agora), through the ERC-4626 wrapper.
