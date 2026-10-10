@@ -1,3 +1,4 @@
+import Feedback from "@/components/Feedback";
 import Header from "@/components/Header";
 import ResultToasts from "@/components/ResultToasts";
 
@@ -8,6 +9,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <Header />
       {children}
       <ResultToasts />
+      <Feedback />
     </>
   );
 }
