@@ -15,7 +15,7 @@ export default function RolloverPill({ r }: { r: RoundView }) {
   const leg = Math.max(1, r.rideLeg);
   return (
     <span className="pill ride" title={rolloverText(r)}>
-      🔁 Rollover{leg > 1 ? ` ${leg}/${MAX_RIDE_LEGS} · +${fmtToken(r.rolledIn)} ${TOKEN_SYMBOL}` : ""}
+      Rollover{leg > 1 ? ` ${leg}/${MAX_RIDE_LEGS} · +${fmtToken(r.rolledIn)} ${TOKEN_SYMBOL}` : ""}
     </span>
   );
 }
