@@ -791,6 +791,20 @@ input:focus {
   font-family: var(--font-mono), monospace;
 }
 
+.season-stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.small-tag {
+  margin-left: 8px;
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+.table .me-row td {
+  background: rgba(182, 255, 26, 0.05);
+}
+
 .claim-all {
   margin-left: auto;
 }
