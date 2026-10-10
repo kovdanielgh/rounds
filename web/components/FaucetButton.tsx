@@ -21,7 +21,7 @@ export default function FaucetButton() {
     address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!],
     query: { enabled: !!address, refetchInterval: 10000 },
   });
-  const [state, setState] = useState<"idle" | "busy" | "done" | "wait" | "error">("idle");
+  const [state, setState] = useState<"idle" | "busy" | "done" | "wait" | "off" | "error">("idle");
   const auto = useRef(false);
 
   const empty = usd !== undefined && mon !== undefined && (usd < 1_000_000n || mon.value < 5_000_000_000_000_000n);
@@ -32,7 +32,12 @@ export default function FaucetButton() {
     try {
       const r = await fetch("/api/faucet", { method: "POST", body: JSON.stringify({ address }) });
       const { status } = (await r.json()) as { status: string };
-      setState(status === "ok" || status === "not-needed" ? "done" : status === "cooldown" ? "wait" : "error");
+      setState(
+        status === "ok" || status === "not-needed" ? "done"
+          : status === "cooldown" ? "wait"
+          : status === "off" ? "off" // the server has no faucet key: say so instead of a silent retry
+          : "error",
+      );
       qc.invalidateQueries();
     } catch {
       setState("error");
@@ -58,6 +63,7 @@ export default function FaucetButton() {
   if (state === "busy") return <span className="faucet busy">Sending test USD…</span>;
   if (state === "done") return empty ? <span className="faucet busy">Test USD on the way…</span> : <span className="faucet ok">+100 test USD ✓</span>;
   if (state === "wait") return <span className="faucet muted">Test USD: once a day</span>;
+  if (state === "off") return <span className="faucet muted" title="The faucet is not set up on this server">Test USD is not available yet</span>;
   if (!empty) return null;
   return (
     <button className="faucet" onClick={request} title="Free test USD and a little MON for gas">
