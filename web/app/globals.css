@@ -167,6 +167,31 @@ p {
   cursor: default;
 }
 
+/* Faucet: test money for an empty wallet */
+.faucet {
+  padding: 6px 12px;
+  border: 1px solid rgba(182, 255, 26, 0.5);
+  border-radius: 999px;
+  background: rgba(182, 255, 26, 0.08);
+  color: var(--acid);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.faucet.busy,
+.faucet.ok,
+.faucet.muted {
+  cursor: default;
+}
+
+.faucet.muted {
+  color: var(--muted);
+  border-color: var(--line);
+  background: none;
+}
+
 /* Connect: full header height, flush right, always colored */
 .connect {
   align-self: stretch;

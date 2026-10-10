@@ -41,7 +41,7 @@ Your yield plays, your money stays.
 - Anyone can call `setStrike` and `settle`, but only in a 150-block window after the phase ends. After the window, only the owner can call them.
 - Pyth Entropy gives the random number for the draw.
 - User deposits never go to the trading engine. The maximum loss is the round budget.
-- 39 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
+- 44 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
 - All contracts are verified on MonadScan.
 
 ## What works today (Monad testnet)
@@ -52,6 +52,7 @@ Your yield plays, your money stays.
 - A live price chart with the strike, and a live prize pool that moves with the price.
 - Season 0 leaderboard. Share cards: the card reads the prize from the contract, so nobody can fake it.
 - An embeddable round for wallets: one iframe, 10 lines of code.
+- No crypto needed to start: log in with email, and test USD plus a little MON for gas arrive by themselves.
 
 ## Business model and go-to-market
 

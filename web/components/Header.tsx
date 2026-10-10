@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ConnectButton from "./ConnectButton";
+import FaucetButton from "./FaucetButton";
 
 export default function Header() {
   const path = usePathname();
@@ -16,6 +17,7 @@ export default function Header() {
         <Link href="/season" className={`navlink ${path === "/season" ? "active" : ""}`}>Season</Link>
         <Link href="/profile" className={`navlink ${path === "/profile" ? "active" : ""}`}>Profile</Link>
       </nav>
+      <FaucetButton />
       <ConnectButton />
     </header>
   );

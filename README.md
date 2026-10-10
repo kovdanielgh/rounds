@@ -97,7 +97,7 @@ Your chance to be drawn is your stake divided by all stakes in the round.
 - **Anyone can call them, but only in a short window** (150 blocks, about 45 s) after the phase ends. A caller cannot pick a better moment.
 - **The draw uses Pyth Entropy,** a verifiable random number. A retry is owner-only, so nobody can cancel a result they do not like.
 - **User deposits never go to the engine.** Only the round budget does. The contract keeps this rule.
-- **37 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
+- **44 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
 
 ---
 
@@ -134,6 +134,7 @@ All our contracts are **verified on MonadScan**: click an address to read the so
 | `Rounds` | [`0xF265…5bd0`](https://testnet.monadscan.com/address/0xF265552D95De56AecdC1711966f2C17f89965bd0#code) | Rounds, deposits, yield split, draw, claim |
 | `PerplEngine` | [`0x2c44…ec9F`](https://testnet.monadscan.com/address/0x2c44282C73d17c82d199457a52De1Ffe4ED4ec9F#code) | Opens and closes one Perpl position per round |
 | `PerplPriceSource` | [`0xcF23…23D3`](https://testnet.monadscan.com/address/0xcF23CC9d662d1d623546BA3AB2A8fE07231723D3#code) | Reads the Perpl mark price |
+| `Faucet` | [`0xbCF1…7e19`](https://testnet.monadscan.com/address/0xbCF1beF801CC4A9c948A464410DB210Fe2d07e19#code) | Test USD and a little MON for new players; our relayer pays the gas |
 | `MockYieldVault` | [`0xF731…BfBc0`](https://testnet.monadscan.com/address/0xF73182502D01fF6E564bF683FB2e7f7D180BfBc0#code) | ERC-4626 vault with fixed APR (testnet only) |
 | AUSD (collateral) | [`0xa901…22dC`](https://testnet.monadscan.com/address/0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC) | Dollar stablecoin by Agora, shown as USD |
 | Pyth Entropy | [`0x825c…3c07`](https://testnet.monadscan.com/address/0x825c0390f379C631f3Cf11A82a37D20BddF93c07) | Random numbers |
@@ -185,6 +186,7 @@ contracts/src/Rounds.sol            rounds, vault accounting, draw, claim
 contracts/src/PerplEngine.sol       Perpl adapter (one position per round)
 contracts/src/PerplPriceSource.sol  on-chain price for strike and settle
 contracts/src/MockYieldVault.sol    ERC-4626 stand-in for a Morpho vault
+contracts/src/Faucet.sol            testnet faucet: 100 USD + 0.05 MON per day, daily cap
 contracts/test/                     unit tests and Perpl fork tests
 bots/index.mjs                      keeper + scheduler (Node, viem)
 scripts/series.json                 round series: asset, side, leverage, prize, timing
