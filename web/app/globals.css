@@ -1831,3 +1831,20 @@ body {
   border-color: var(--acid);
   color: var(--acid);
 }
+
+.modal h2.fb-q {
+  margin: 0 32px 8px 0;
+  font-size: 20px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.fb-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal .fb-nav .btn {
+  margin-top: 8px;
+}

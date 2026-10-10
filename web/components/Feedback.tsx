@@ -39,7 +39,14 @@ export default function Feedback() {
   const [annoyed, setAnnoyed] = useState("");
   const [back, setBack] = useState("");
   const [note, setNote] = useState("");
+  const [step, setStep] = useState(0);
   const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+
+  function show() {
+    setStep(0);
+    setState("idle");
+    setOpen(true);
+  }
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
@@ -47,7 +54,7 @@ export default function Feedback() {
       const n = count((e as CustomEvent<string | undefined>).detail);
       setDeposits(n);
       // Let "You're in" and the confetti play first.
-      if (ASK_AT.includes(n)) t = setTimeout(() => setOpen(true), 2500);
+      if (ASK_AT.includes(n)) t = setTimeout(show, 2500);
     };
     window.addEventListener("rounds:deposit", onDeposit);
     return () => {
@@ -64,6 +71,7 @@ export default function Feedback() {
   }, [open]);
 
   async function send() {
+    if (!clear && !annoyed.trim() && !back && !note.trim()) return setOpen(false);
     setState("sending");
     const res = await fetch("/api/feedback", {
       method: "POST",
@@ -75,11 +83,23 @@ export default function Feedback() {
     setTimeout(() => setOpen(false), 1500);
   }
 
-  const empty = !clear && !annoyed.trim() && !back && !note.trim();
+  /** A choice moves on by itself; a text field has Next (or Send on the last question). */
+  const pick = (set: (v: string) => void) => (v: string) => {
+    set(v);
+    if (v) setTimeout(() => setStep((s) => s + 1), 250);
+  };
+  const steps = [
+    { q: "Is it clear what happens to your money?", body: <Choice name="Clear" value={clear} set={pick(setClear)} options={["Yes", "Kind of", "No"]} /> },
+    { q: "What annoyed you?", body: <input autoFocus value={annoyed} onChange={(e) => setAnnoyed(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setStep(2)} placeholder="Anything slow, confusing or ugly" maxLength={500} aria-label="What annoyed you?" />, text: true },
+    { q: "Will you come back tomorrow?", body: <Choice name="Back" value={back} set={pick(setBack)} options={["Yes", "Maybe", "No"]} /> },
+    { q: "Anything else?", body: <textarea autoFocus value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} aria-label="Anything else?" />, text: true },
+  ];
+  const last = step === steps.length - 1;
+  const cur = steps[Math.min(step, steps.length - 1)];
 
   return (
     <>
-      <button className="feedback-tab" onClick={() => { setState("idle"); setOpen(true); }}>Feedback</button>
+      <button className="feedback-tab" onClick={show}>Feedback</button>
       {open && (
         <div className="modal-back" onClick={() => setOpen(false)}>
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="fb-title" onClick={(e) => e.stopPropagation()}>
@@ -88,20 +108,17 @@ export default function Feedback() {
               <h2 id="fb-title">Thank you! 🙌</h2>
             ) : (
               <>
-                <h2 id="fb-title">Quick question</h2>
-                <p className="muted small">Three questions, 20 seconds. It helps us a lot.</p>
-                <label>Is it clear what happens to your money?</label>
-                <Choice name="Clear" value={clear} set={setClear} options={["Yes", "Kind of", "No"]} />
-                <label htmlFor="fb-annoyed">What annoyed you?</label>
-                <input id="fb-annoyed" value={annoyed} onChange={(e) => setAnnoyed(e.target.value)} placeholder="Anything slow, confusing or ugly" maxLength={500} />
-                <label>Will you come back tomorrow?</label>
-                <Choice name="Back" value={back} set={setBack} options={["Yes", "Maybe", "No"]} />
-                <label htmlFor="fb-note">Anything else?</label>
-                <textarea id="fb-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={1000} />
+                <h2 id="fb-title" className="fb-q">{cur.q}</h2>
+                {cur.body}
                 {state === "failed" && <div className="error small">Could not send. Please try again.</div>}
-                <button className="btn wide" disabled={empty || state === "sending"} onClick={send}>
-                  {state === "sending" ? "Sending…" : "Send"}
-                </button>
+                <div className="fb-nav">
+                  {step > 0 && <button className="btn small ghost" onClick={() => setStep(step - 1)}>Back</button>}
+                  {last ? (
+                    <button className="btn small" disabled={state === "sending"} onClick={send}>{state === "sending" ? "Sending…" : "Send"}</button>
+                  ) : (
+                    <button className={`btn small ${cur.text ? "" : "ghost"}`} onClick={() => setStep(step + 1)}>{cur.text && annoyed.trim() ? "Next" : "Skip"}</button>
+                  )}
+                </div>
               </>
             )}
           </div>
