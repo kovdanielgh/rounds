@@ -123,7 +123,7 @@ contract Rounds {
 
     uint64 public defaultEntryBlocks;
     uint64 public defaultDurationBlocks;
-    uint64 public callWindowBlocks = 50; // ~15 s on Monad
+    uint64 public callWindowBlocks = 150; // ~45 s on Monad
 
     // Liabilities. vault assets - liabilities = yield not harvested yet.
     uint256 public totalBalances; // all user balances, including yield credited lazily
@@ -280,6 +280,18 @@ contract Rounds {
 
     /// @notice Create a round, starting now. Zero lengths take the defaults.
     function createRound(RoundParams calldata p) external onlyOwner returns (uint256 id) {
+        id = _create(p);
+    }
+
+    /// @notice Create several rounds in one transaction: a mirror pair gets exactly the same blocks.
+    function createRounds(RoundParams[] calldata ps) external onlyOwner returns (uint256 firstId) {
+        for (uint256 i; i < ps.length; i++) {
+            uint256 id = _create(ps[i]);
+            if (i == 0) firstId = id;
+        }
+    }
+
+    function _create(RoundParams calldata p) internal returns (uint256 id) {
         uint64 entryEnd = uint64(block.number) + (p.entryBlocks == 0 ? defaultEntryBlocks : p.entryBlocks);
         uint64 end = entryEnd + (p.durationBlocks == 0 ? defaultDurationBlocks : p.durationBlocks);
         id = _createRound(p.asset, p.marketId, p.thesis, p.bonus, entryEnd, end);
@@ -305,6 +317,30 @@ contract Rounds {
 
     /// @notice Fix the strike from the on-chain price, just after the entry window closes.
     function setStrike(uint256 id) external {
+        _setStrike(id);
+    }
+
+    /// @notice Fix several strikes in one transaction, so the two sides of a mirror pair get the same price.
+    function setStrikeMany(uint256[] calldata ids) external {
+        for (uint256 i; i < ids.length; i++) _setStrike(ids[i]);
+    }
+
+    /// @notice Resolve the thesis from the on-chain price, just after the round end. If it won and
+    /// there are participants, the whole pot (budget after the engine PnL) is drawn: send at least
+    /// entropy.getFeeV2() as value, the rest is refunded. If it lost, the pot goes back to treasury.
+    function settle(uint256 id) external payable {
+        _refund(msg.value - _settle(id, msg.value));
+    }
+
+    /// @notice Settle several rounds in one transaction at one price (mirror pairs). Send
+    /// entropy.getFeeV2() for each round that may draw; the rest is refunded.
+    function settleMany(uint256[] calldata ids) external payable {
+        uint256 left = msg.value;
+        for (uint256 i; i < ids.length; i++) left -= _settle(ids[i], left);
+        _refund(left);
+    }
+
+    function _setStrike(uint256 id) internal {
         Round storage r = rounds[id];
         if (r.status != Status.Open || r.strike != 0 || block.number <= r.entryEnd) revert WrongPhase();
         _checkWindow(r.entryEnd);
@@ -327,10 +363,8 @@ contract Rounds {
         _openPosition(id, r);
     }
 
-    /// @notice Resolve the thesis from the on-chain price, just after the round end. If it won and
-    /// there are participants, the whole pot (budget after the engine PnL) is drawn: send at least
-    /// entropy.getFeeV2() as value, the rest is refunded. If it lost, the pot goes back to treasury.
-    function settle(uint256 id) external payable {
+    /// @dev Returns the Entropy fee it spent (0 when there is no draw).
+    function _settle(uint256 id, uint256 value) internal returns (uint256 used) {
         Round storage r = rounds[id];
         if (r.status != Status.Open || block.number <= r.end || r.strike == 0) revert WrongPhase();
         _checkWindow(r.end);
@@ -353,19 +387,18 @@ contract Rounds {
             reserved -= r.budget;
             treasury += r.budget;
             r.status = Status.Settled;
-            _refund(msg.value);
             emit Settled(id, finalPrice, r.thesisWon, r.winners);
-            return;
+            return 0;
         }
         r.status = Status.Drawing;
-        _requestDraw(id);
+        used = _requestDraw(id, value);
     }
 
     /// @notice Request randomness again if the callback did not arrive. Owner only: a public retry
     /// would let anyone cancel a draw result they saw coming.
     function retryDraw(uint256 id) external payable onlyOwner {
         if (rounds[id].status != Status.Drawing) revert WrongPhase();
-        _requestDraw(id);
+        _refund(msg.value - _requestDraw(id, msg.value));
     }
 
     /// @notice Called by Pyth Entropy (same signature as IEntropyConsumer in the Pyth SDK).
@@ -632,13 +665,13 @@ contract Rounds {
         yieldDebt[user] = accYieldPerBalance;
     }
 
-    function _requestDraw(uint256 id) internal {
-        uint256 fee = entropy.getFeeV2();
-        if (msg.value < fee) revert InsufficientFee();
+    /// @dev Pays the Entropy fee from `value` and returns it.
+    function _requestDraw(uint256 id, uint256 value) internal returns (uint256 fee) {
+        fee = entropy.getFeeV2();
+        if (value < fee) revert InsufficientFee();
         uint64 sequence = entropy.requestV2{value: fee}();
         rounds[id].sequence = sequence;
         roundOfSequence[sequence] = id;
-        _refund(msg.value - fee);
         emit DrawRequested(id, sequence);
     }
 

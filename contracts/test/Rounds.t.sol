@@ -630,4 +630,44 @@ contract RoundsTest is Test {
         assertEq(usd.balanceOf(alice), paid);
         _assertSolvent();
     }
+
+    function test_mirrorPair_sameStrikeAndFinal_oneTx() public {
+        uint256 bull = _create("BTC", 16, Rounds.Thesis.Bullish, 10e6);
+        uint256 bear = _create("BTC", 16, Rounds.Thesis.Bearish, 10e6);
+        _enter(alice, bull, 100e6);
+        _enter(bob, bear, 100e6);
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = bull;
+        ids[1] = bear;
+
+        px.set(16, 80_000);
+        vm.roll(rounds.getRound(bull).entryEnd + 1);
+        vm.prank(keeper);
+        rounds.setStrikeMany(ids);
+        assertEq(rounds.getRound(bull).strike, rounds.getRound(bear).strike);
+
+        px.set(16, 80_500);
+        vm.roll(rounds.getRound(bull).end + 1);
+        uint256 k0 = keeper.balance;
+        vm.prank(keeper);
+        rounds.settleMany{value: 0.2 ether}(ids); // fee for both, one is refunded
+        assertEq(keeper.balance, k0 - 0.1 ether); // only the winning side drew
+        Rounds.Round memory a = rounds.getRound(bull);
+        Rounds.Round memory b = rounds.getRound(bear);
+        assertEq(a.finalPrice, b.finalPrice);
+        assertTrue(a.thesisWon != b.thesisWon); // exactly one side wins
+    }
+
+    function test_createRounds_pairHasSameBlocks() public {
+        Rounds.RoundParams[] memory ps = new Rounds.RoundParams[](2);
+        ps[0] = Rounds.RoundParams("BTC", 16, Rounds.Thesis.Bullish, 5e6, 30, 40, "up", "r", 15);
+        ps[1] = Rounds.RoundParams("BTC", 16, Rounds.Thesis.Bearish, 5e6, 30, 40, "down", "r", 15);
+        uint256 first = rounds.createRounds(ps);
+        Rounds.Round memory a = rounds.getRound(first);
+        Rounds.Round memory b = rounds.getRound(first + 1);
+        assertEq(a.entryEnd, b.entryEnd);
+        assertEq(a.end, b.end);
+        assertEq(uint8(b.thesis), uint8(Rounds.Thesis.Bearish));
+        assertEq(b.leverage, 15);
+    }
 }

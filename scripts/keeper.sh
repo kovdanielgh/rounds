@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Keeper: an alarm clock. It calls setStrike / settle at the right block. It decides nothing:
 # the contract reads the price on-chain and anyone can make these calls inside the window.
-# Env (from .env): MONAD_TESTNET_RPC, PRIVATE_KEY, ROUNDS.
+# Env (from .env): MONAD_TESTNET_RPC, ROUNDS, KEEPER_PK (a key without owner rights; falls back to PRIVATE_KEY).
 set -uo pipefail # no -e: an RPC error must not stop the bot
 cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
@@ -11,7 +11,8 @@ ROUND='getRound(uint256)((bytes32,uint256,uint8,uint8,bool,uint64,uint64,uint64,
 
 log() { echo "$(date '+%H:%M:%S') $*"; }
 call() { cast call --rpc-url "$R" "$@" | cut -d' ' -f1; }
-snd() { cast send --rpc-url "$R" --private-key "$PRIVATE_KEY" -q "$@" >/dev/null; }
+KEY=${KEEPER_PK:-$PRIVATE_KEY}
+snd() { cast send --rpc-url "$R" --private-key "$KEY" -q "$@" >/dev/null; }
 
 # Prints: end borrowed strike (settle closes the engine position itself)
 round_fields() {
@@ -19,26 +20,40 @@ round_fields() {
     python3 -c 'import json,sys; r=json.load(sys.stdin)[0]; print(r[6], r[10], r[11])'
 }
 
-# One pass over all rounds. Returns non-zero on an RPC error; the loop logs it and goes on.
+done_=() # done_[id]=1: round already Settled, never read again (indexed array: works in bash 3.2)
+first=1          # rounds below this id are all settled
+
+# One pass over the live rounds. All strikes due go in one setStrikeMany, all settles due in one
+# settleMany, so both sides of a mirror pair always get the same price. Returns non-zero on an RPC error.
 tick() {
-  local count block id end _borrowed strike fee
+  local count block id phase end _borrowed strike fee
+  local strikes=() settles=()
   count=$(call "$ROUNDS" 'roundCount()(uint256)') && [ -n "$count" ] || return 1
   block=$(cast block-number --rpc-url "$R") && [ -n "$block" ] || return 1
-  for ((id = 1; id <= count; id++)); do
-    [ "$(call "$ROUNDS" 'phase(uint256)(uint8)' "$id")" = 2 ] || continue # only Closed rounds
+  for ((id = first; id <= count; id++)); do
+    [ -n "${done_[$id]:-}" ] && continue
+    phase=$(call "$ROUNDS" 'phase(uint256)(uint8)' "$id") || return 1
+    if [ "$phase" = 4 ]; then done_[$id]=1; continue; fi
+    [ "$phase" = 2 ] || continue # only Closed rounds need work
     read -r end _borrowed strike < <(round_fields "$id") || return 1
     [ -n "${strike:-}" ] || return 1
-    if [ "$strike" = 0 ]; then
-      snd "$ROUNDS" 'setStrike(uint256)' "$id" && log "round $id: strike $(round_fields "$id" | cut -d' ' -f3)"
-    elif ((block > end)); then
-      fee=$(call "$ROUNDS" 'drawFee()(uint256)') || return 1
-      snd "$ROUNDS" 'settle(uint256)' "$id" --value "$fee" &&
-        log "round $id: settled (strike $strike), phase $(call "$ROUNDS" 'phase(uint256)(uint8)' "$id")"
-    fi
+    if [ "$strike" = 0 ]; then strikes+=("$id"); elif ((block > end)); then settles+=("$id"); fi
   done
+  while [ -n "${done_[$first]:-}" ]; do first=$((first + 1)); done
+
+  if ((${#strikes[@]})); then
+    local list; list=$(IFS=,; echo "${strikes[*]}")
+    snd "$ROUNDS" 'setStrikeMany(uint256[])' "[$list]" && log "strike: rounds $list" || log "strike failed: $list (window passed? owner can call)"
+  fi
+  if ((${#settles[@]})); then
+    local list; list=$(IFS=,; echo "${settles[*]}")
+    fee=$(call "$ROUNDS" 'drawFee()(uint256)') || return 1
+    snd "$ROUNDS" 'settleMany(uint256[])' "[$list]" --value "$((fee * ${#settles[@]}))" &&
+      log "settled: rounds $list" || log "settle failed: $list (window passed? owner can call)"
+  fi
 }
 
-log "keeper for $ROUNDS"
+log "keeper $(cast wallet address --private-key "$KEY") for $ROUNDS"
 while true; do
   tick 2>/dev/null || { log "rpc error, retrying"; sleep 5; }
   sleep 1
