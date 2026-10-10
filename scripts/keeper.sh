@@ -41,15 +41,16 @@ tick() {
   done
   while [ -n "${done_[$first]:-}" ]; do first=$((first + 1)); done
 
-  if ((${#strikes[@]})); then
-    local list; list=$(IFS=,; echo "${strikes[*]}")
-    snd "$ROUNDS" 'setStrikeMany(uint256[])' "[$list]" && log "strike: rounds $list" || log "strike failed: $list (window passed? owner can call)"
-  fi
+  # Settle first: it closes the old position, so the next round on the same market can open one.
   if ((${#settles[@]})); then
     local list; list=$(IFS=,; echo "${settles[*]}")
     fee=$(call "$ROUNDS" 'drawFee()(uint256)') || return 1
     snd "$ROUNDS" 'settleMany(uint256[])' "[$list]" --value "$((fee * ${#settles[@]}))" &&
       log "settled: rounds $list" || log "settle failed: $list (window passed? owner can call)"
+  fi
+  if ((${#strikes[@]})); then
+    local list; list=$(IFS=,; echo "${strikes[*]}")
+    snd "$ROUNDS" 'setStrikeMany(uint256[])' "[$list]" && log "strike: rounds $list" || log "strike failed: $list (window passed? owner can call)"
   fi
 }
 
