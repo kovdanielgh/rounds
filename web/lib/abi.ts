@@ -216,6 +216,19 @@ export const roundsAbi = [
   },
   {
     "type": "function",
+    "name": "fees",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "freeBalanceOf",
     "inputs": [
       {
@@ -426,6 +439,19 @@ export const roundsAbi = [
   },
   {
     "type": "function",
+    "name": "reserved",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "roundAprBps",
     "inputs": [],
     "outputs": [
@@ -478,6 +504,19 @@ export const roundsAbi = [
         "name": "",
         "type": "address",
         "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalBalances",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -678,5 +717,57 @@ export const priceSourceAbi = [
         "type": "uint256"
       }
     ]
+  }
+] as const;
+
+export const engineAbi = [
+  {
+    "type": "function",
+    "name": "positions",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "perpId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "margin",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "credit",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "lotLNS",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isLong",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "open",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "closed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
   }
 ] as const;

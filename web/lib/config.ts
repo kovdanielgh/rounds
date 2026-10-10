@@ -4,6 +4,7 @@ export const chain = monadTestnet;
 export const ROUNDS = process.env.NEXT_PUBLIC_ROUNDS as `0x${string}`;
 export const AUSD = process.env.NEXT_PUBLIC_AUSD as `0x${string}`;
 export const PRICE_SOURCE = process.env.NEXT_PUBLIC_PRICE_SOURCE as `0x${string}`;
+export const ENGINE = process.env.NEXT_PUBLIC_ENGINE as `0x${string}`;
 /** Our own wallets, marked "team" on the Season page (honest stats). */
 export const TEAM = (process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe")
   .toLowerCase()

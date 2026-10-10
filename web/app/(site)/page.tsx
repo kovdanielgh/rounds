@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import MirrorCard from "@/components/MirrorCard";
+import HowItWorks from "@/components/HowItWorks";
 import { CardSkeleton } from "@/components/Skeletons";
+import StatsBar from "@/components/StatsBar";
 import VaultCard from "@/components/VaultCard";
 import { groupMirrors, useBlock, useRounds, type Item, type RoundView } from "@/hooks/useRounds";
 import { useFlip } from "@/hooks/useFlip";
@@ -50,6 +52,8 @@ export default function Home() {
           depositors share the prize: 80% · 15% · 5%.
         </p>
       </section>
+      <StatsBar rounds={rounds} ready={ready} />
+      <HowItWorks />
       <div className="tabs">
         <button className={tab === "open" ? "active" : ""} onClick={() => setTab("open")}>Open vaults</button>
         <button className={tab === "closed" ? "active" : ""} onClick={() => setTab("closed")}>Closed vaults</button>

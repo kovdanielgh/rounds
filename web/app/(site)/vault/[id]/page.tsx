@@ -64,6 +64,9 @@ export default function VaultPage() {
             <h1>{r.asset} · Round #{r.id.toString()}</h1>
           </div>
           <p className="muted">{statusText(r, block)}</p>
+          <div className="promise">
+            <strong>Your deposit always comes back.</strong> Only the yield is at risk.
+          </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
           </p>
