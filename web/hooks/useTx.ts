@@ -90,7 +90,7 @@ export function humanError(e: unknown, fn = ""): string {
  * run(steps) resolves true when every step landed. error is a plain sentence.
  */
 export function useTx() {
-  const { chainId } = useAccount();
+  const { chainId, address } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [lastHash, setLastHash] = useState<`0x${string}`>();
   const { writeContractAsync } = useWriteContract();
@@ -101,6 +101,26 @@ export function useTx() {
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  /**
+   * Gas and a legacy gas price, estimated by us. Mobile wallets (MetaMask Mobile, WalletConnect) often
+   * reject EIP-1559 fee fields on a custom network with "Missing or invalid parameters". If our estimate
+   * fails, the wallet estimates as before.
+   */
+  async function feeFields(tx: WriteArgs) {
+    if (!client || !address) return {};
+    try {
+      const t = tx as unknown as { address: `0x${string}`; abi: readonly unknown[]; functionName: string; args?: readonly unknown[]; value?: bigint };
+      const [gas, gasPrice] = await Promise.all([
+        client.estimateContractGas({ address: t.address, abi: t.abi as never, functionName: t.functionName as never, args: t.args as never, value: t.value, account: address }),
+        client.getGasPrice(),
+      ]);
+      // Monad charges the gas limit, so keep the buffer small.
+      return { type: "legacy" as const, gas: (gas * 115n) / 100n, gasPrice };
+    } catch {
+      return {};
+    }
+  }
 
   async function run(steps: Step[]) {
     clearTimeout(timer.current);
@@ -117,7 +137,7 @@ export function useTx() {
         const prefix = steps.length > 1 ? `${i + 1}/${steps.length} · ` : "";
         setPhase("confirm");
         setStatus(`${prefix}Confirm in your wallet…`);
-        const hash = await writeContractAsync(s.tx);
+        const hash = await writeContractAsync({ ...s.tx, ...(await feeFields(s.tx)) } as WriteArgs);
         setLastHash(hash);
         setPhase("sending");
         setStatus(`${prefix}${s.label || "Sending…"}`);
