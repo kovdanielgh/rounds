@@ -5,6 +5,7 @@ import { useAccount, useReadContracts } from "wagmi";
 import Art from "@/components/Art";
 import DepositForm from "@/components/DepositForm";
 import ProgressBar from "@/components/ProgressBar";
+import ShareButton from "@/components/ShareButton";
 import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
@@ -108,6 +109,18 @@ export default function VaultPage() {
             </button>
           )}
           {claimed && <p className="muted small">Claimed to your wallet{prize > 0n ? `, prize +${fmtToken(prize)} ${TOKEN_SYMBOL}` : ""}.</p>}
+          {r.phase === 4 && stake > 0n && (
+            <div className="share-row">
+              <ShareButton
+                id={r.id}
+                text={
+                  prize > 0n
+                    ? `I won ${fmtToken(prize)} USD on Rounds and kept my deposit.`
+                    : `I played ${THESIS[r.thesis]} ${r.asset} on Rounds and kept my ${fmtToken(stake)} USD deposit.`
+                }
+              />
+            </div>
+          )}
           {error && <div className="error small">{error}</div>}
 
           {r.phase === 4 && r.winners[0] !== "0x0000000000000000000000000000000000000000" && (

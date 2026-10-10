@@ -10,8 +10,9 @@ const sans = Space_Grotesk({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://saverounds.vercel.app"),
   title: "Rounds",
-  description: "No-loss savings rounds on Monad",
+  description: "Play the market. Keep your money. No-loss savings rounds on Monad.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

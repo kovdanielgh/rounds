@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
+import ShareButton from "@/components/ShareButton";
 import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
@@ -154,6 +155,9 @@ export default function Profile() {
                       <button className="btn small" disabled={busy} onClick={() => act([x], "claim")}>
                         {rowBusy === x.r.id && status ? status : `Claim ${fmtToken(x.stake + x.prize)}`}
                       </button>
+                    )}
+                    {x.prize > 0n && (x.claimed || x.r.phase === 4) && (
+                      <ShareButton small id={x.r.id} text={`I won ${fmtToken(x.prize)} USD on Rounds and kept my deposit.`} />
                     )}
                     {x.r.phase === 1 && x.stake > 0n && (
                       <button className="btn small ghost" disabled={busy} onClick={() => act([x], "exit")}>

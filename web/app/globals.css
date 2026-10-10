@@ -805,6 +805,37 @@ input:focus {
   background: rgba(182, 255, 26, 0.05);
 }
 
+.share-btns {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.share-row {
+  margin-top: 12px;
+}
+
+.table .action .share-btns {
+  margin-left: 8px;
+}
+
+.share-page {
+  max-width: 820px;
+  text-align: center;
+}
+
+.share-img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  margin: 16px 0 28px;
+}
+
+.share-actions {
+  justify-content: center;
+  margin-top: 20px;
+}
+
 .claim-all {
   margin-left: auto;
 }
