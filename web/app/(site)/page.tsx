@@ -5,6 +5,7 @@ import MirrorCard from "@/components/MirrorCard";
 import HowItWorks from "@/components/HowItWorks";
 import { CardSkeleton } from "@/components/Skeletons";
 import StatsBar from "@/components/StatsBar";
+import WinnersFeed from "@/components/WinnersFeed";
 import VaultCard from "@/components/VaultCard";
 import { groupMirrors, useBlock, useRounds, type Item } from "@/hooks/useRounds";
 import { useFlip } from "@/hooks/useFlip";
@@ -47,6 +48,7 @@ export default function Home() {
         <h1>Play the market. Keep your money.</h1>
         <HowItWorks />
         <StatsBar rounds={rounds} ready={ready} />
+        <WinnersFeed rounds={rounds} block={block} />
       </section>
       <div className="tabs">
         <button className={tab === "open" ? "active" : ""} onClick={() => setTab("open")}>Open rounds</button>

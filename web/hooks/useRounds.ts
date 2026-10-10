@@ -35,7 +35,8 @@ export type RoundView = {
 
 /** Current block, refreshed about every second. */
 export function useBlock() {
-  return useBlockNumber({ chainId: CHAIN_ID, watch: true, query: { refetchInterval: 1000 } }).data;
+  // 2 s is enough for countdowns and bars (they animate between updates); fewer RPC calls.
+  return useBlockNumber({ chainId: CHAIN_ID, watch: true, query: { refetchInterval: 2000 } }).data;
 }
 
 /** All rounds with phase, texts and live price. Small n, one multicall. */
