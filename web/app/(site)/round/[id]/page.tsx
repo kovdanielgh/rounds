@@ -72,7 +72,7 @@ export default function VaultPage() {
             <RolloverPill r={r} />
           </div>
           <p className="muted">{statusText(r, block)}</p>
-          {isRollover(r.description) && <p className="muted small">🔁 {rolloverText(r)}.</p>}
+          {isRollover(r.description) && <p className="muted small">{rolloverText(r)}.</p>}
           <div className="promise">
             <strong>Your money always comes back.</strong> Only the yield of the round plays.
           </div>
