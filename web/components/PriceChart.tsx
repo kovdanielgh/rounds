@@ -54,9 +54,11 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
   const liveV = live ? Number(live) / scale : undefined;
   const strikeV = r.strike ? Number(r.strike) / scale : undefined;
 
+  const ended = now >= endT || r.phase >= 3; // the round is over: the chart freezes at its end
   const view = useMemo(() => {
-    const data = [...points];
-    if (liveV && r.phase < 4 && (!data.length || now > data[data.length - 1].t)) data.push({ t: Math.min(now, endT), v: liveV });
+    const data = points.filter((p) => p.t <= endT);
+    if (r.phase === 4 && r.finalPrice) data.push({ t: endT, v: Number(r.finalPrice) / scale }); // the settle price
+    else if (liveV && !ended && (!data.length || now > data[data.length - 1].t)) data.push({ t: now, v: liveV });
     if (!data.length) return null;
     const base = strikeV ?? liveV ?? data[data.length - 1].v; // strike, or "strike if entry closed now"
     const vals = data.map((p) => p.v).concat(base);
@@ -75,7 +77,7 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
     // Point on the line at the moment the strike was fixed.
     const atEntry = data.reduce((a, p) => (Math.abs(p.t - entryT) < Math.abs(a.t - entryT) ? p : a), data[0]);
     return { x, y, line, area, by, base, last, atEntry, lo, hi };
-  }, [points, liveV, strikeV, r.phase, now, fromT, endT, entryT]);
+  }, [points, liveV, strikeV, r.phase, r.finalPrice, ended, now, fromT, endT, entryT, scale]);
 
   const hhmm = (t: number) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const fmt = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: v < 1 ? 5 : 2 });

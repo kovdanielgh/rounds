@@ -501,7 +501,11 @@ input:focus {
 }
 
 .cell.span2 {
-  grid-column: span 2;
+  grid-column: 1 / -1; /* a mirror pair takes the full row */
+}
+
+.cell.span2 .mirror-art .art {
+  max-height: 300px; /* wide art: keep the card from getting too tall on wide screens */
 }
 
 .cell.popping {
@@ -545,11 +549,6 @@ input:focus {
   100% { transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); opacity: 0; }
 }
 
-@media (max-width: 800px) {
-  .cell.span2 {
-    grid-column: auto;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .cell.popping > .card,

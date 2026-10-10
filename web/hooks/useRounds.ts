@@ -30,6 +30,7 @@ export type RoundView = {
   description: string;
   rules: string;
   price?: bigint; // live on-chain price
+  ended?: boolean; // the end block has passed (settle may still be pending)
 };
 
 /** Current block, refreshed about every second. */
@@ -114,10 +115,12 @@ export function useRounds() {
   });
   const priceOf = new Map(markets.map((m, i) => [m, prices?.[i]?.result as bigint | undefined]));
 
+  const { data: head } = useBlockNumber({ watch: true, query: { refetchInterval: 3000 } });
   const withLive = rounds.map((r) => {
+    const ended = head !== undefined && head > r.end;
     const price = priceOf.get(r.marketId);
-    const live = livePoolOf({ ...r, price }, econ as readonly [bigint, bigint, bigint] | undefined);
-    return { ...r, price, livePool: live.value, poolLive: live.moving };
+    const live = livePoolOf({ ...r, price, ended }, econ as readonly [bigint, bigint, bigint] | undefined);
+    return { ...r, price, ended, livePool: live.value, poolLive: live.moving };
   });
   // ready: we know how many rounds there are, and their data has arrived (for skeletons).
   const ready = countFetched && (n === 0 || !!data);
@@ -182,7 +185,8 @@ export function livePoolOf(r: RoundView, econ?: readonly [bigint, bigint, bigint
     if (advance > treasury) advance = treasury;
     return { value: r.pool + advance, moving: advance > 0n };
   }
-  if (r.phase === 2 && r.borrowed > 0n && r.strike > 0n && r.price) {
+  // After the end block the price no longer counts: keep the last estimate frozen (settle will set the real pool).
+  if (r.phase === 2 && r.borrowed > 0n && r.strike > 0n && r.price && !r.ended) {
     const lev = leverageOf(r.marketId, r.leverage);
     const side = r.thesis === 1 ? 1 : -1;
     const move = (Number(r.price) - Number(r.strike)) / Number(r.strike);

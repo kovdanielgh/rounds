@@ -29,7 +29,7 @@ export default function MirrorArt({ asset }: { asset: string }) {
   const toStr = (p: [number, number][]) => p.map((q) => q.join(",")).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="art" role="img" aria-label={`${meta.name}: bullish or bearish`}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="art" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${meta.name}: bullish or bearish`}>
       <defs>
         <linearGradient id={`bg-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#1c2840" />

@@ -12,7 +12,15 @@ ROUND='getRound(uint256)((bytes32,uint256,uint8,uint8,bool,uint64,uint64,uint64,
 log() { echo "$(date '+%H:%M:%S') $*"; }
 call() { cast call --rpc-url "$R" "$@" | cut -d' ' -f1; }
 KEY=${KEEPER_PK:-$PRIVATE_KEY}
-snd() { cast send --rpc-url "$R" --private-key "$KEY" -q "$@" >/dev/null; }
+OWNER_KEY=${PRIVATE_KEY:-}
+# Send with the keeper key. If that fails (for example the window passed while the bot was down),
+# retry with the owner key: the owner may call after the window, so no round gets stuck.
+snd() {
+  cast send --rpc-url "$R" --private-key "$KEY" -q "$@" >/dev/null 2>&1 && return 0
+  [ -n "$OWNER_KEY" ] && [ "$OWNER_KEY" != "$KEY" ] || return 1
+  cast send --rpc-url "$R" --private-key "$OWNER_KEY" -q "$@" >/dev/null 2>&1 && { log "owner fallback used"; return 0; }
+  return 1
+}
 
 # Prints: end borrowed strike (settle closes the engine position itself)
 round_fields() {
@@ -57,5 +65,5 @@ tick() {
 log "keeper $(cast wallet address --private-key "$KEY") for $ROUNDS"
 while true; do
   tick 2>/dev/null || { log "rpc error, retrying"; sleep 5; }
-  sleep 1
+  sleep 3 # light on a small server; still far inside the 45 s window
 done

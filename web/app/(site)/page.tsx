@@ -36,7 +36,9 @@ export default function Home() {
     rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1) && lengthSeconds(r) <= TERMS[term]),
   );
   // Cards that leave (entry window closed) pop like bubbles; the rest glide to their new place.
-  const list = usePopList(shown, itemKey, `${tab}:${term}`);
+  // Mirror pairs first: they take a full row, so the grid of single cards below has no holes.
+  const ordered = [...shown.filter((it) => it.kind === "mirror"), ...shown.filter((it) => it.kind === "single")];
+  const list = usePopList(ordered, itemKey, `${tab}:${term}`);
   const grid = useFlip<HTMLDivElement>();
 
   return (

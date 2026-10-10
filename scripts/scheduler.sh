@@ -54,5 +54,5 @@ tick() {
 log "scheduler for $ROUNDS"
 while true; do
   tick 2>/dev/null || { log "rpc error, retrying"; sleep 5; }
-  sleep 10
+  sleep 30
 done
