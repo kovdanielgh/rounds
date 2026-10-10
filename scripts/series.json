@@ -86,7 +86,7 @@
     },
     {
       "name": "jackpot-week",
-      "endAtUtc": "18:00",
+      "endAtUtc": "20:00",
       "endDow": 0,
       "durationBlocks": 11921,
       "waitSettle": true,
@@ -97,22 +97,22 @@
       },
       "rounds": [
         {
-          "asset": "SOL",
-          "marketId": 48,
+          "asset": "ETH",
+          "marketId": 32,
           "thesis": 1,
-          "leverage": 10,
+          "leverage": 12,
           "bonus": 100000000,
-          "description": "Jackpot of the week: SOL by Sunday 18:00 UTC. Bulls side.",
-          "rules": "Start price: Perpl price when entry closes (Sunday 17:00 UTC). Final: price at Sunday 18:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
+          "description": "Jackpot of the week: ETH by Sunday 20:00 UTC. Bulls side.",
+          "rules": "Start price: Perpl price when entry closes (Sunday 19:00 UTC). Final: price at Sunday 20:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
         },
         {
-          "asset": "SOL",
-          "marketId": 48,
+          "asset": "ETH",
+          "marketId": 32,
           "thesis": 2,
-          "leverage": 10,
+          "leverage": 12,
           "bonus": 100000000,
-          "description": "Jackpot of the week: SOL by Sunday 18:00 UTC. Bears side.",
-          "rules": "Start price: Perpl price when entry closes (Sunday 17:00 UTC). Final: price at Sunday 18:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
+          "description": "Jackpot of the week: ETH by Sunday 20:00 UTC. Bears side.",
+          "rules": "Start price: Perpl price when entry closes (Sunday 19:00 UTC). Final: price at Sunday 20:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
         }
       ]
     }

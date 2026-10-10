@@ -84,14 +84,27 @@ Testnet only. The legal structure (prize-linked savings vs. a market) is under r
 ## Risks, honestly
 
 - **Regulation of prize draws.** In mirror pairs each user picks a side, so the product is closer to a market than to a draw. We will get legal advice before mainnet.
-- **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. A growing jackpot and options can add bigger prizes later.
+- **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. Rollover and the growing jackpot already make prizes rarer and bigger. Options and Turbo come next.
 - **The testnet vault is a mock** with a fixed APR. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper (static aToken), with no change to the `Rounds` contract. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 
 ## Next
 
+**Rounds is a platform, not one perp trade.** A new kind of round is usually a new engine adapter (`IEngine`), not a new contract. The engine decides what the yield of the round buys. The average prize stays the same. The shape changes: rarer, bigger prizes.
+
+| Kind of round | What the yield buys | Prize multiple | Status |
+|---|---|---|---|
+| Perp on Perpl | a 3x–15x long or short | ×1 … ×3 | **live** |
+| Rollover | the won pool trades again in the next round, up to 3 in a row | ×3 … ×9 | **live** (hourly SOL) |
+| Growing jackpot | the pool grows every week nobody wins | up to ×5 | **live** (weekly ETH) |
+| Turbo on Perpl | a perp that adds its profit back to the position at each step (convex, like a call option) | ×1 … ×20 | next: an engine update |
+| New-token basket on Kuru or nad.fun | 5–10 new Monad tokens, sold at the end | ×0 … ×100 | mainnet: no liquidity on testnet |
+| Out-of-the-money options | calls or puts | ×10 … ×50 | when an options venue goes live on Monad |
+| Outcome tokens | "yes" shares at 5 cents | ×20 | when a large prediction market goes live on Monad |
+
+**Product:**
 1. Mainnet with Aave AUSD as the yield source (recommended by Agora), through the ERC-4626 wrapper.
-2. Risk levels per round: Steady (3x) and Moonshot (15x).
-3. A jackpot that grows from lost rounds.
+2. Deposit with any token (MON, USDC, ETH), swapped to AUSD in the same transaction, and card top-ups.
+3. "Play again" by default: the money stays in the series until the user takes it out.
 4. An SDK that uses the host wallet directly, without a second login.
 5. Robinhood Chain for stock rounds (NVDA, TSLA).
 
