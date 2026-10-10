@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
 import ShareButton from "@/components/ShareButton";
+import { Line, RowSkeleton } from "@/components/Skeletons";
 import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
@@ -33,7 +34,7 @@ function Result({ x, me }: { x: Row; me?: string }) {
 export default function Profile() {
   const { authenticated, login } = usePrivy();
   const { address } = useAccount();
-  const { rounds } = useRounds();
+  const { rounds, ready } = useRounds();
   const block = useBlock();
   const { run, status, error, busy } = useTx();
   const [tab, setTab] = useState<"active" | "history">("active");
@@ -103,8 +104,8 @@ export default function Profile() {
       </h1>
       <div className="panel balances">
         <dl className="stats">
-          <div><dt>In vaults (stakes, prizes, yield)</dt><dd>{fmtToken(balance, 4)} {TOKEN_SYMBOL}</dd></div>
-          <div><dt>Wallet</dt><dd>{fmtToken(wallet)} {TOKEN_SYMBOL}</dd></div>
+          <div><dt>In vaults (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
+          <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
         </dl>
         {error && <div className="error small">{error}</div>}
       </div>
@@ -121,7 +122,15 @@ export default function Profile() {
         )}
       </div>
 
-      {shown.length === 0 ? (
+      {!ready || (rounds.length > 0 && (!entries || !prizes)) ? (
+        <div className="table-wrap">
+          <table className="table">
+            <tbody>
+              {[0, 1, 2].map((i) => <RowSkeleton key={i} cols={6} />)}
+            </tbody>
+          </table>
+        </div>
+      ) : shown.length === 0 ? (
         <p className="muted">{tab === "active" ? "You are not in any vault right now." : "No history yet."}</p>
       ) : (
         <div className="table-wrap">

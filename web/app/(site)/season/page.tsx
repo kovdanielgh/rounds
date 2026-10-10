@@ -3,11 +3,12 @@
 import { useAccount } from "wagmi";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useSeason } from "@/hooks/useSeason";
+import { RowSkeleton } from "@/components/Skeletons";
 import { TEAM, TOKEN_SYMBOL } from "@/lib/config";
 import { fmtToken, shortAddr } from "@/lib/format";
 
 export default function Season() {
-  const { rounds } = useRounds();
+  const { rounds, ready } = useRounds();
   const block = useBlock();
   const { address } = useAccount();
   const { players, totalPrizes, totalRounds, isLoading } = useSeason(rounds, block);
@@ -28,8 +29,16 @@ export default function Season() {
         </dl>
       </div>
 
-      {isLoading && <p className="muted">Loading…</p>}
-      {!isLoading && players.length === 0 && <p className="muted">No players yet. Be the first: pick a round and deposit.</p>}
+      {(!ready || isLoading) && (
+        <div className="table-wrap">
+          <table className="table">
+            <tbody>
+              {[0, 1, 2, 3].map((i) => <RowSkeleton key={i} cols={6} />)}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {ready && !isLoading && players.length === 0 && <p className="muted">No players yet. Be the first: pick a round and deposit.</p>}
       {players.length > 0 && (
         <div className="table-wrap">
           <table className="table">

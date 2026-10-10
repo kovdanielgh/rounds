@@ -3,6 +3,8 @@
 import Art from "./Art";
 import DepositForm from "./DepositForm";
 import MirrorArt from "./MirrorArt";
+import Pool from "./Pool";
+import { CardSkeleton } from "./Skeletons";
 import ProgressBar from "./ProgressBar";
 import { statusText } from "./VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
@@ -18,6 +20,7 @@ export default function EmbedRound({ id, asset }: { id: string; asset?: string }
       ? rounds.find((x) => x.phase === 1 && (!asset || x.asset === asset.toUpperCase()))
       : rounds.find((x) => x.id.toString() === id);
 
+  if (!r && isLoading) return <CardSkeleton />;
   if (!r) {
     return (
       <div className="embed card static">
@@ -44,7 +47,7 @@ export default function EmbedRound({ id, asset }: { id: string; asset?: string }
         <div className="muted small status-line">{statusText(r, block)}</div>
         <p className="embed-desc">{r.description}</p>
         <dl className="stats">
-          <div><dt>Prize pool</dt><dd>{fmtToken(r.pool)} {TOKEN_SYMBOL}</dd></div>
+          <div><dt>Prize pool</dt><dd><Pool r={r} /></dd></div>
           <div><dt>Price now</dt><dd>{fmtPrice(r.price, r.asset)}</dd></div>
         </dl>
         {r.phase === 1 ? <DepositForm id={r.id} /> : <p className="muted small">Entry is closed. The next round opens soon.</p>}

@@ -779,16 +779,178 @@ input:focus {
   }
 }
 
+/* ------------------------------------------------------------ skeletons and live pool */
+
+@keyframes skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.skeleton {
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(160, 190, 230, 0.06) 25%, rgba(160, 190, 230, 0.15) 50%, rgba(160, 190, 230, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 400 / 220;
+  border-radius: 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
+.pool .up, .pool.live .up { color: var(--acid); }
+.pool.live .down { color: var(--bear); }
+
+/* ------------------------------------------------------------ price chart */
+
+.chart-card {
+  padding: 14px 0 16px;
+  margin: 12px 0 4px;
+  background: var(--bg); /* no backing: the chart sits on the page black */
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.price-chart {
+  margin: 8px 0 4px;
+}
+
+.price-chart.empty {
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+.price-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-mono), monospace;
+}
+
+.price-line {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+
+.price-line.up { stroke: var(--acid); }
+.price-line.down { stroke: var(--bear); }
+
+.zone-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  opacity: 0.45;
+}
+
+.zone-label.up { fill: var(--acid); }
+.zone-label.down { fill: var(--bear); }
+
+.moment {
+  stroke: rgba(214, 228, 245, 0.28);
+  stroke-dasharray: 3 4;
+}
+
+.moment-label,
+.axis-label,
+.strike-label {
+  font-size: 11px;
+  fill: var(--muted);
+}
+
+.strike {
+  stroke: #e6f0ff;
+  stroke-width: 1.2;
+  stroke-dasharray: 6 4;
+}
+
+.strike.pending {
+  stroke: rgba(214, 228, 245, 0.45);
+  stroke-dasharray: 2 5;
+}
+
+.strike-tag {
+  fill: #e6f0ff;
+}
+
+.strike-tag-text {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #0a0f05;
+}
+
+.strike-dot {
+  fill: #e6f0ff;
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.now-dot.up, .now-halo.up { fill: var(--acid); }
+.now-dot.down, .now-halo.down { fill: var(--bear); }
+
+.now-halo {
+  opacity: 0.25;
+  animation: halo 1.6s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes halo {
+  from { transform: scale(0.6); opacity: 0.5; }
+  to { transform: scale(2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-halo { animation: none; }
+}
+
+.chart-caption {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 12px 0 0;
+}
+
+.chart-caption.up {
+  color: var(--acid);
+}
+
+.chart-caption.down {
+  color: var(--bear);
+}
+
 /* ------------------------------------------------------------ vault page */
 
 .vault-head {
-  max-height: 320px;
   margin-bottom: 28px;
 }
 
 .vault-head .art {
-  height: 320px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
+  max-height: 320px; /* wide art (800x220) fills the header; slice crops a little on very wide screens */
 }
 
 .vault-grid {

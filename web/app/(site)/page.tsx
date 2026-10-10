@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import MirrorCard from "@/components/MirrorCard";
+import { CardSkeleton } from "@/components/Skeletons";
 import VaultCard from "@/components/VaultCard";
 import { groupMirrors, useBlock, useRounds, type Item, type RoundView } from "@/hooks/useRounds";
 import { useFlip } from "@/hooks/useFlip";
@@ -29,7 +30,7 @@ function Droplets({ bear }: { bear: boolean }) {
 export default function Home() {
   const [tab, setTab] = useState<"open" | "closed">("open");
   const [term, setTerm] = useState<Term>("all");
-  const { rounds, isLoading } = useRounds();
+  const { rounds, ready } = useRounds();
   const block = useBlock();
   const shown = groupMirrors(
     rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1) && lengthSeconds(r) <= TERMS[term]),
@@ -58,8 +59,12 @@ export default function Home() {
           ))}
         </div>
       </div>
-      {isLoading && <p className="muted">Loading…</p>}
-      {!isLoading && shown.length === 0 && <p className="muted">No {tab} vaults right now.</p>}
+      {ready && shown.length === 0 && <p className="muted">No {tab} vaults right now.</p>}
+      {!ready && (
+        <div className="grid">
+          {[0, 1, 2].map((i) => <CardSkeleton key={i} />)}
+        </div>
+      )}
       <div className="grid" ref={grid}>
         {list.map(({ k, item, popping }) => (
           <div key={k} data-k={k} className={`cell ${item.kind === "mirror" ? "span2" : ""} ${popping ? "popping" : ""}`}>

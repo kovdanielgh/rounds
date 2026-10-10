@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import Art from "./Art";
+import Pool from "./Pool";
 import ProgressBar from "./ProgressBar";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS, THESIS, TOKEN_SYMBOL, leverageOf } from "@/lib/config";
-import { fmtDuration, fmtPrice, fmtToken } from "@/lib/format";
+import { BLOCK_SECONDS, THESIS, leverageOf } from "@/lib/config";
+import { fmtDuration, fmtPrice } from "@/lib/format";
 
 export function statusText(r: RoundView, block?: bigint) {
   const left = (to: bigint) => (block && to > block ? fmtDuration(Number(to - block) * BLOCK_SECONDS) : "now");
@@ -31,7 +32,7 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
         <dl className="stats">
           <div>
             <dt>Prize pool</dt>
-            <dd>{fmtToken(r.pool)} {TOKEN_SYMBOL}</dd>
+            <dd><Pool r={r} /></dd>
           </div>
           <div>
             <dt>Base APY</dt>

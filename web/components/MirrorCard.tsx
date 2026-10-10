@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import MirrorArt from "./MirrorArt";
+import Pool from "./Pool";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
 import { TOKEN_SYMBOL, leverageOf } from "@/lib/config";
@@ -12,7 +13,7 @@ function Side({ r, label }: { r: RoundView; label: string }) {
   return (
     <div className={`side ${bear ? "bear" : ""}`}>
       <dl className="stats col">
-        <div><dt>Pool</dt><dd>{fmtToken(r.pool)} {TOKEN_SYMBOL}</dd></div>
+        <div><dt>Pool</dt><dd><Pool r={r} /></dd></div>
         <div><dt>Staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
       </dl>
       <Link href={`/vault/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>

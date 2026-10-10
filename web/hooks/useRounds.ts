@@ -2,7 +2,7 @@
 
 import { useBlockNumber, useReadContract, useReadContracts } from "wagmi";
 import { priceSourceAbi, roundsAbi } from "@/lib/abi";
-import { BLOCK_SECONDS, PRICE_SOURCE, ROUNDS } from "@/lib/config";
+import { BLOCK_SECONDS, PRICE_SOURCE, ROUNDS, leverageOf } from "@/lib/config";
 import { assetLabel } from "@/lib/format";
 
 export type RoundView = {
@@ -15,7 +15,11 @@ export type RoundView = {
   start: bigint;
   entryEnd: bigint;
   end: bigint;
-  pool: bigint; // budget in the vault + money in the engine position
+  pool: bigint; // budget in the vault + money in the engine position (book value)
+  budget: bigint;
+  borrowed: bigint; // margin in the Perpl position, 0 if none
+  livePool: bigint; // pool now: estimate with current stakes (Open) or the position marked to the price (Live)
+  poolLive: boolean; // livePool is an estimate that moves
   funded: bigint;
   strike: bigint;
   finalPrice: bigint;
@@ -35,11 +39,21 @@ export function useBlock() {
 
 /** All rounds with phase, texts and live price. Small n, one multicall. */
 export function useRounds() {
-  const { data: count } = useReadContract({
+  const { data: count, isFetched: countFetched } = useReadContract({
     address: ROUNDS,
     abi: roundsAbi,
     functionName: "roundCount",
     query: { refetchInterval: 4000 },
+  });
+  // Economics for the live pool estimate: the same numbers the contract uses at the window close.
+  const { data: econ } = useReadContracts({
+    allowFailure: false,
+    contracts: [
+      { address: ROUNDS, abi: roundsAbi, functionName: "roundAprBps" },
+      { address: ROUNDS, abi: roundsAbi, functionName: "blocksPerYear" },
+      { address: ROUNDS, abi: roundsAbi, functionName: "treasury" },
+    ],
+    query: { refetchInterval: 15000 },
   });
   const n = Number(count ?? 0n);
   const ids = Array.from({ length: n }, (_, i) => BigInt(i + 1));
@@ -74,6 +88,10 @@ export function useRounds() {
       entryEnd: r.entryEnd,
       end: r.end,
       pool: r.budget + r.borrowed,
+      budget: r.budget,
+      borrowed: r.borrowed,
+      livePool: r.budget + r.borrowed,
+      poolLive: false,
       funded: r.funded,
       strike: r.strike,
       finalPrice: r.finalPrice,
@@ -96,7 +114,14 @@ export function useRounds() {
   });
   const priceOf = new Map(markets.map((m, i) => [m, prices?.[i]?.result as bigint | undefined]));
 
-  return { rounds: rounds.map((r) => ({ ...r, price: priceOf.get(r.marketId) })).reverse(), isLoading: isLoading && n > 0 };
+  const withLive = rounds.map((r) => {
+    const price = priceOf.get(r.marketId);
+    const live = livePoolOf({ ...r, price }, econ as readonly [bigint, bigint, bigint] | undefined);
+    return { ...r, price, livePool: live.value, poolLive: live.moving };
+  });
+  // ready: we know how many rounds there are, and their data has arrived (for skeletons).
+  const ready = countFetched && (n === 0 || !!data);
+  return { rounds: withLive.reverse(), isLoading: !ready || (isLoading && n > 0), ready };
 }
 
 /** 0..1 progress of the current phase, from blocks. */
@@ -141,4 +166,29 @@ export function shakeOf(r: RoundView, block?: bigint) {
   if (block >= to) return "";
   const left = Number(to - block) * BLOCK_SECONDS;
   return left <= 5 ? "shake hard" : left <= 20 ? "shake" : "";
+}
+
+/**
+ * Prize pool now.
+ * Open: the bonus plus the yield advance the current stakes will get at the window close.
+ * Live with a Perpl position: margin * (1 + leverage * side * move from the strike), never below 0.
+ * This is an estimate: the real fill has spread and fees. Settled: the final pool.
+ */
+export function livePoolOf(r: RoundView, econ?: readonly [bigint, bigint, bigint]) {
+  if (r.phase === 1) {
+    if (!econ || r.totalStake === 0n) return { value: r.pool, moving: false };
+    const [aprBps, blocksPerYear, treasury] = econ;
+    let advance = (r.totalStake * aprBps * (r.end - r.entryEnd)) / (10_000n * blocksPerYear);
+    if (advance > treasury) advance = treasury;
+    return { value: r.pool + advance, moving: advance > 0n };
+  }
+  if (r.phase === 2 && r.borrowed > 0n && r.strike > 0n && r.price) {
+    const lev = leverageOf(r.marketId, r.leverage);
+    const side = r.thesis === 1 ? 1 : -1;
+    const move = (Number(r.price) - Number(r.strike)) / Number(r.strike);
+    const factor = Math.max(0, 1 + lev * side * move);
+    const value = (r.borrowed * BigInt(Math.round(factor * 1_000_000))) / 1_000_000n + r.budget;
+    return { value, moving: true };
+  }
+  return { value: r.pool, moving: false };
 }
