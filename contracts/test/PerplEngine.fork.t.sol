@@ -60,7 +60,7 @@ contract PerplEngineForkTest is Test {
     function _roundTrip(uint256 roundId, uint256 perpId, bool isLong) internal returns (uint256 back) {
         uint256 r0 = AUSD.balanceOf(rounds);
         vm.prank(rounds);
-        engine.open(roundId, perpId, isLong, MARGIN);
+        engine.open(roundId, perpId, isLong, MARGIN, 0);
         assertEq(AUSD.balanceOf(rounds), r0 - MARGIN, "margin pulled");
         IPerplDex.PositionInfo memory pos = engine.positionOf(perpId);
         assertGt(pos.lotLNS, 0, "filled");
@@ -101,8 +101,8 @@ contract PerplEngineForkTest is Test {
     function test_twoMarkets_independent() public {
         if (noFork) return;
         vm.startPrank(rounds);
-        engine.open(1, BTC, true, MARGIN);
-        engine.open(2, ETH, false, MARGIN);
+        engine.open(1, BTC, true, MARGIN, 0);
+        engine.open(2, ETH, false, MARGIN, 0);
         _roll(10);
         uint256 a = engine.close(2);
         uint256 b = engine.close(1);
@@ -116,13 +116,13 @@ contract PerplEngineForkTest is Test {
     function test_busyMarket_reverts() public {
         if (noFork) return;
         vm.startPrank(rounds);
-        engine.open(1, BTC, true, MARGIN);
+        engine.open(1, BTC, true, MARGIN, 0);
         vm.expectRevert(PerplEngine.MarketBusy.selector);
-        engine.open(2, BTC, false, MARGIN);
+        engine.open(2, BTC, false, MARGIN, 0);
         vm.expectRevert(PerplEngine.RoundUsed.selector);
-        engine.open(1, ETH, false, MARGIN);
+        engine.open(1, ETH, false, MARGIN, 0);
         engine.close(1);
-        engine.open(3, BTC, false, MARGIN); // free again after close
+        engine.open(3, BTC, false, MARGIN, 0); // free again after close
         vm.stopPrank();
     }
 
@@ -131,7 +131,7 @@ contract PerplEngineForkTest is Test {
         address eve = makeAddr("eve");
         vm.startPrank(eve);
         vm.expectRevert(PerplEngine.NotRounds.selector);
-        engine.open(1, BTC, true, MARGIN);
+        engine.open(1, BTC, true, MARGIN, 0);
         vm.expectRevert(PerplEngine.NotRounds.selector);
         engine.close(1);
         vm.expectRevert(PerplEngine.NotOwner.selector);
@@ -147,7 +147,7 @@ contract PerplEngineForkTest is Test {
         engine.setSlippage(1, 1_000);
         uint256 r0 = AUSD.balanceOf(rounds);
         vm.prank(rounds);
-        (bool ok, bytes memory err) = address(engine).call(abi.encodeCall(PerplEngine.open, (1, BTC, true, MARGIN)));
+        (bool ok, bytes memory err) = address(engine).call(abi.encodeCall(PerplEngine.open, (1, BTC, true, MARGIN, 0)));
         if (!ok) {
             console.log("no-fill revert selector");
             console.logBytes4(bytes4(err));
@@ -162,13 +162,13 @@ contract PerplEngineForkTest is Test {
         if (noFork) return;
         vm.prank(rounds);
         vm.expectRevert(PerplEngine.BadMarket.selector);
-        engine.open(1, 64, true, MARGIN); // MON: leverage not set
+        engine.open(1, 64, true, MARGIN, 0); // MON: leverage not set
     }
 
     function test_ownerClosePosition_thenClose() public {
         if (noFork) return;
         vm.prank(rounds);
-        engine.open(1, BTC, true, MARGIN);
+        engine.open(1, BTC, true, MARGIN, 0);
         engine.closePosition(1); // owner de-risks early, proceeds stay in Perpl
         assertEq(engine.positionOf(BTC).lotLNS, 0);
         vm.prank(rounds);

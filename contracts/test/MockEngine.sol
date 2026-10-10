@@ -23,7 +23,10 @@ contract MockEngine {
         failOpen = f;
     }
 
-    function open(uint256 roundId, uint256, bool isLong, uint256 margin) external {
+    uint256 public lastLeverage;
+
+    function open(uint256 roundId, uint256, bool isLong, uint256 margin, uint256 leverage) external {
+        lastLeverage = leverage;
         require(!failOpen, "no liquidity");
         usd.transferFrom(msg.sender, address(this), margin);
         marginOf[roundId] = margin;

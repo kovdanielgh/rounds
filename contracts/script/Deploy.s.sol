@@ -40,11 +40,11 @@ contract Deploy is Script {
             uint256 buffer = vm.envOr("ENGINE_BUFFER", uint256(100e6));
             IERC20(token).approve(address(pe), buffer);
             pe.init(buffer);
-            // Below Perpl max (BTC 15x, ETH 12x, SOL 10x, MON 3x); testnet books are thin.
-            pe.setLeverage(16, 5);
-            pe.setLeverage(32, 5);
-            pe.setLeverage(48, 5);
-            pe.setLeverage(64, 2);
+            // Caps = Perpl max per market; a round picks its own leverage up to the cap (0 = cap).
+            pe.setLeverage(16, 15);
+            pe.setLeverage(32, 12);
+            pe.setLeverage(48, 10);
+            pe.setLeverage(64, 3);
             engine = address(pe);
         }
         if (engine != address(0)) rounds.setEngine(IEngine(engine));

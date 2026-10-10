@@ -201,7 +201,8 @@ contract PerplEngine is IEngine {
         emit RoundsSet(rounds_);
     }
 
-    /// @notice Leverage for a market (integer x, e.g. 5). Must be <= the Perpl max for the market.
+    /// @notice Leverage cap for a market (integer x, e.g. 15), also the default when a round asks
+    /// for 0. Must be <= the Perpl max for the market. 0 = market disabled.
     function setLeverage(uint256 perpId, uint256 leverage) external onlyOwner {
         if (leverage > 100) revert BadAmount();
         leverageOf[perpId] = leverage;
@@ -268,22 +269,17 @@ contract PerplEngine is IEngine {
     // ---------------------------------------------------------------- engine
 
     /// @inheritdoc IEngine
-    function open(uint256 roundId, uint256 marketId, bool isLong, uint256 margin) external onlyRounds {
+    function open(uint256 roundId, uint256 marketId, bool isLong, uint256 margin, uint256 leverage_)
+        external
+        onlyRounds
+    {
         if (accountId == 0) revert NotInitialized();
         if (margin == 0) revert BadAmount();
-        uint256 leverage = leverageOf[marketId];
-        if (leverage == 0) revert BadMarket();
         if (busyRound[marketId] != 0) revert MarketBusy();
         if (positions[roundId].margin != 0) revert RoundUsed();
         (IPerplDex.PositionInfo memory before,,) = exchange.getPosition(marketId, accountId);
         if (before.lotLNS != 0) revert MarketBusy(); // leftover position not owned by a round
-
-        IPerplDex.PerpetualInfo memory info = exchange.getPerpetualInfo(marketId);
-        if (info.markPNS == 0) revert BadMarket();
-        // size = notional / mark; lotLNS = margin * leverage * 10^(priceDec + lotDec) / (markPNS * 10^collatDec)
-        uint256 lot = margin * leverage * 10 ** (info.priceDecimals + info.lotDecimals) / (info.markPNS * CNS);
-        if (lot == 0) revert BadAmount();
-        uint256 worst = isLong ? info.markPNS * (BPS + slippageBps) / BPS : info.markPNS * (BPS - slippageBps) / BPS;
+        (uint256 leverage, uint256 lot, uint256 worst) = _size(marketId, isLong, margin, leverage_);
 
         _pull(msg.sender, margin);
         uint256 b0 = _balance();
@@ -348,6 +344,23 @@ contract PerplEngine is IEngine {
         }
         p.closed = true;
         emit PositionClosed(roundId, p.lotLNS, p.credit);
+    }
+
+    /// @dev Leverage (round value or the market cap), lot size and worst IOC price for an open.
+    function _size(uint256 marketId, bool isLong, uint256 margin, uint256 leverage_)
+        internal
+        view
+        returns (uint256 leverage, uint256 lot, uint256 worst)
+    {
+        uint256 cap = leverageOf[marketId]; // owner-set cap for the market, <= the Perpl max
+        leverage = leverage_ == 0 ? cap : leverage_;
+        if (cap == 0 || leverage > cap) revert BadMarket();
+        IPerplDex.PerpetualInfo memory info = exchange.getPerpetualInfo(marketId);
+        if (info.markPNS == 0) revert BadMarket();
+        // size = notional / mark; lotLNS = margin * leverage * 10^(priceDec + lotDec) / (markPNS * 10^collatDec)
+        lot = margin * leverage * 10 ** (info.priceDecimals + info.lotDecimals) / (info.markPNS * CNS);
+        if (lot == 0) revert BadAmount();
+        worst = isLong ? info.markPNS * (BPS + slippageBps) / BPS : info.markPNS * (BPS - slippageBps) / BPS;
     }
 
     function _order(uint256 perpId, uint8 orderType, uint256 price, uint256 lot, uint256 levHdths, uint256 negPnl)

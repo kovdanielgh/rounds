@@ -13,6 +13,14 @@ import {IEngine} from "../src/IEngine.sol";
 contract RoundsTest is Test {
     receive() external payable {}
 
+    /// Claim one round as `u`; returns what reached the wallet.
+    function _claim(address u, uint256 id) internal returns (uint256 paid) {
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = id;
+        vm.prank(u);
+        paid = rounds.claim(ids);
+    }
+
     function _create(bytes32 asset, uint256 marketId, Rounds.Thesis thesis, uint256 budget) internal returns (uint256) {
         return _create(asset, marketId, thesis, budget, 0, 0);
     }
@@ -22,7 +30,7 @@ contract RoundsTest is Test {
         returns (uint256)
     {
         return rounds.createRound(
-            Rounds.RoundParams(asset, marketId, thesis, budget, entry, duration, "BTC goes up", "Mark price TWAP vs strike")
+            Rounds.RoundParams(asset, marketId, thesis, budget, entry, duration, "BTC goes up", "Mark price TWAP vs strike", 0)
         );
     }
 
@@ -115,14 +123,16 @@ contract RoundsTest is Test {
         address[4] memory all = [alice, bob, carol, dave];
         uint256 sum;
         for (uint256 i; i < 4; i++) {
-            uint256 before = rounds.balanceOf(all[i]);
-            rounds.claim(id, all[i]);
+            (, uint256 st,,,) = rounds.entries(id, all[i]);
+            uint256 paid = _claim(all[i], id);
             assertEq(rounds.lockedOf(all[i]), 0);
-            sum += rounds.balanceOf(all[i]) - before;
+            assertEq(rounds.balanceOf(all[i]), 0);
+            assertEq(usd.balanceOf(all[i]), paid);
+            sum += paid - st;
         }
         assertEq(sum, 100e6);
-        // every deposit is intact or bigger
-        assertGe(rounds.balanceOf(carol), 500e6);
+        // every deposit is intact or bigger, now in the wallet
+        assertGe(usd.balanceOf(carol), 500e6);
     }
 
     function test_thesisLost_noPrize_depositsSafe() public {
@@ -131,10 +141,9 @@ contract RoundsTest is Test {
         assertEq(_resolve(id, 1_900), 0);
         assertEq(uint8(rounds.getRound(id).status), uint8(Rounds.Status.Settled));
         assertEq(keeper.balance, 100 ether); // no draw, full refund
-        assertEq(rounds.claim(id, alice), 0);
-        vm.prank(alice);
-        rounds.withdraw(300e6);
+        assertEq(_claim(alice, id), 300e6); // no prize: the whole deposit goes back to the wallet
         assertEq(usd.balanceOf(alice), 300e6);
+        assertEq(rounds.balanceOf(alice), 0);
     }
 
     function test_bearishWinsOnDrop() public {
@@ -142,7 +151,8 @@ contract RoundsTest is Test {
         _enter(alice, id, 1e6);
         uint64 seq = _resolve(id, 1_900);
         entropy.fire(seq, bytes32(uint256(1)));
-        assertEq(rounds.claim(id, alice), 10e6); // single participant takes all places
+        assertEq(rounds.prizeOf(id, alice), 10e6); // single participant takes all places
+        assertEq(_claim(alice, id), 310e6); // deposit + prize to the wallet
     }
 
     function test_twoParticipants_thirdShareGoesToFirst() public {
@@ -177,9 +187,11 @@ contract RoundsTest is Test {
         _enter(alice, id, 300e6);
         _enter(bob, id, 100e6);
         vm.prank(bob);
-        rounds.exitRound(id); // Open: exit ok
-        assertEq(rounds.freeBalanceOf(bob), 100e6);
-        _enter(bob, id, 100e6);
+        rounds.exitRound(id); // Open: exit ok, money goes straight to the wallet
+        assertEq(usd.balanceOf(bob), 100e6);
+        assertEq(rounds.balanceOf(bob), 0);
+        vm.prank(bob);
+        rounds.depositAndEnter(id, 100e6);
 
         vm.roll(rounds.getRound(id).entryEnd + 1);
         assertEq(uint8(rounds.phase(id)), uint8(Rounds.Phase.Closed));
@@ -194,10 +206,8 @@ contract RoundsTest is Test {
         assertEq(uint8(rounds.phase(id)), uint8(Rounds.Phase.Drawing));
         entropy.fire(seq, keccak256("p"));
         assertEq(uint8(rounds.phase(id)), uint8(Rounds.Phase.Settled));
-        rounds.claim(id, alice);
-        uint256 bal = rounds.balanceOf(alice);
-        vm.prank(alice);
-        rounds.withdraw(bal);
+        _claim(alice, id);
+        assertEq(rounds.balanceOf(alice), 0);
         assertGe(usd.balanceOf(alice), 300e6);
     }
 
@@ -231,7 +241,7 @@ contract RoundsTest is Test {
         uint256 id = _create(MON, 1, Rounds.Thesis.Bullish, 10e6);
         _enter(alice, id, 100e6);
         _enter(alice, id, 50e6);
-        (, uint256 stake,) = rounds.entries(id, alice);
+        (, uint256 stake,,,) = rounds.entries(id, alice);
         assertEq(stake, 150e6);
         assertEq(rounds.lockedOf(alice), 150e6);
         assertEq(rounds.getRound(id).count, 1);
@@ -245,12 +255,16 @@ contract RoundsTest is Test {
         uint256[4] memory st = [uint256(300e6), 100e6, 500e6, 100e6];
         for (uint256 j; j < runs; j++) {
             uint256 id = _create(MON, 1, Rounds.Thesis.Bullish, 1e6);
-            for (uint256 i; i < 4; i++) _enter(all[i], id, st[i]);
+            for (uint256 i; i < 4; i++) {
+                vm.prank(all[i]);
+                if (j == 0) rounds.enter(id, st[i]); // setUp deposit
+                else rounds.depositAndEnter(id, st[i]); // claim sent it to the wallet
+            }
             entropy.fire(_resolve(id, 2_100), keccak256(abi.encode(j)));
             address w = rounds.getRound(id).winners[0];
             for (uint256 i; i < 4; i++) {
                 if (w == all[i]) wins[i]++;
-                rounds.claim(id, all[i]);
+                _claim(all[i], id);
             }
         }
         // expected 120 / 40 / 200 / 40, allow wide tolerance
@@ -375,7 +389,7 @@ contract RoundsTest is Test {
         uint256[] memory st = new uint256[](n);
         uint256 remaining;
         for (uint256 i; i < n; i++) {
-            (, st[i],) = rounds.entries(id, us[i]);
+            (, st[i],,,) = rounds.entries(id, us[i]);
             remaining += st[i];
         }
         Rounds.Round memory r = rounds.getRound(id);
@@ -433,7 +447,8 @@ contract RoundsTest is Test {
         assertEq(rounds.fees(), 4_500_000);
         assertEq(rounds.getRound(id).budget, 245_500_000);
         entropy.fire(rounds.getRound(id).sequence, keccak256("f"));
-        assertEq(rounds.claim(id, alice), 245_500_000);
+        assertEq(rounds.prizeOf(id, alice), 245_500_000);
+        assertEq(_claim(alice, id), 545_500_000); // 300 deposit + prize
         _assertSolvent();
 
         rounds.withdrawFees(address(0xFEE));
@@ -449,9 +464,7 @@ contract RoundsTest is Test {
         assertEq(_resolve(id, 1_900), 0);
         assertEq(rounds.fees(), 0);
         assertEq(rounds.treasury(), t0); // nothing came back
-        rounds.claim(id, alice);
-        vm.prank(alice);
-        rounds.withdraw(300e6);
+        assertEq(_claim(alice, id), 300e6);
         assertEq(usd.balanceOf(alice), 300e6);
         _assertSolvent();
     }
@@ -463,7 +476,8 @@ contract RoundsTest is Test {
         eng.setResult(6_000); // fees/slippage ate 40%
         entropy.fire(_resolve(id, 2_100), keccak256("g"));
         assertEq(rounds.fees(), 0);
-        assertEq(rounds.claim(id, alice), 60e6);
+        assertEq(rounds.prizeOf(id, alice), 60e6);
+        assertEq(_claim(alice, id), 360e6);
         _assertSolvent();
     }
 
@@ -474,7 +488,8 @@ contract RoundsTest is Test {
         _enter(alice, id, 300e6);
         entropy.fire(_resolve(id, 2_100), keccak256("h"));
         assertEq(rounds.getRound(id).borrowed, 0);
-        assertEq(rounds.claim(id, alice), 100e6);
+        assertEq(rounds.prizeOf(id, alice), 100e6);
+        assertEq(_claim(alice, id), 400e6);
         _assertSolvent();
     }
 
@@ -540,5 +555,79 @@ contract RoundsTest is Test {
         vm.prank(alice);
         vm.expectRevert(Rounds.NotOwner.selector);
         rounds.setEconomics(0, 0, 0, 1);
+    }
+
+    function test_prizeEarnsYieldUntilClaim_andEarnedShown() public {
+        MockYieldVault v = new MockYieldVault(IERC20Like(address(usd)), 1_000); // 10% APR
+        Rounds r2 = new Rounds(
+            IERC20(address(usd)), IERC4626(address(v)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
+        );
+        r2.setEconomics(300, 0, 5_000, 78_840_000); // users get half of the vault yield
+        usd.mint(address(v), 10_000e6); // yield reserve
+        usd.mint(address(this), 1_000e6);
+        usd.approve(address(r2), type(uint256).max);
+        r2.fundTreasury(1_000e6);
+        address eve = makeAddr("eve");
+        usd.mint(eve, 1_000e6);
+        vm.prank(eve);
+        usd.approve(address(r2), type(uint256).max);
+
+        uint256 id = r2.createRound(Rounds.RoundParams("BTC", 1, Rounds.Thesis.Bullish, 1_000e6, 0, 0, "", "", 0));
+        vm.prank(eve);
+        r2.depositAndEnter(id, 1_000e6);
+        px.set(1, 100);
+        vm.roll(r2.getRound(id).entryEnd + 1);
+        r2.setStrike(id);
+        px.set(1, 101);
+        vm.roll(r2.getRound(id).end + 1);
+        vm.deal(address(this), 1 ether);
+        r2.settle{value: 0.1 ether}(id);
+        entropy.fire(r2.getRound(id).sequence, keccak256("y"));
+        assertEq(r2.prizeOf(id, eve), 1_000e6);
+        assertEq(r2.balanceWithYield(eve), 2_000e6); // prize is on the balance right after the draw
+
+        vm.warp(block.timestamp + 365 days);
+        r2.harvest();
+        uint256 earned = r2.earnedOf(id, eve);
+        assertGt(earned, 0); // stake and prize both earn while unclaimed
+        assertApproxEqAbs(r2.balanceWithYield(eve), 2_000e6 + earned, 2);
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = id;
+        vm.prank(eve);
+        uint256 paid = r2.claim(ids);
+        assertEq(usd.balanceOf(eve), paid);
+        assertApproxEqAbs(paid, 2_000e6 + earned, 2);
+        (,,,, uint256 earnedFinal) = r2.entries(id, eve);
+        assertEq(earnedFinal, earned);
+    }
+
+    function test_claimMany_oneTx_andLeveragePassedToEngine() public {
+        rounds.setEngine(IEngine(address(eng)));
+        uint256 a = rounds.createRound(Rounds.RoundParams(MON, 1, Rounds.Thesis.Bullish, 10e6, 0, 0, "", "", 12));
+        uint256 b = _create(MON, 1, Rounds.Thesis.Bearish, 10e6);
+        _enter(alice, a, 100e6);
+        _enter(alice, b, 100e6);
+        vm.roll(rounds.getRound(a).entryEnd + 1);
+        px.set(1, 2_000);
+        rounds.setStrike(a);
+        assertEq(eng.lastLeverage(), 12);
+        rounds.setStrike(b);
+        assertEq(eng.lastLeverage(), 0); // 0 = engine uses the market cap
+        vm.roll(rounds.getRound(a).end + 1);
+        px.set(1, 1_900);
+        vm.deal(address(this), 1 ether);
+        rounds.settle(a); // bull thesis lost
+        rounds.settle{value: 0.1 ether}(b); // bear thesis won
+        entropy.fire(rounds.getRound(b).sequence, keccak256("m"));
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = a;
+        ids[1] = b;
+        vm.prank(alice);
+        uint256 paid = rounds.claim(ids);
+        assertEq(paid, 300e6 + 10e6); // whole deposit + prize of b, in one transaction
+        assertEq(usd.balanceOf(alice), paid);
+        _assertSolvent();
     }
 }

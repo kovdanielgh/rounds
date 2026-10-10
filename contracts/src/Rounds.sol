@@ -78,6 +78,8 @@ contract Rounds {
         address[3] winners;
         uint256 funded;     // budget when the position opened (advance + bonus): baseline for the fee
         uint64 start;       // block of creation (for progress bars)
+        uint8 leverage;     // engine leverage for this round, 0 = engine default (market cap)
+        uint256 accAtDraw;  // accYieldPerBalance when prizes were credited
     }
 
     struct RoundParams {
@@ -89,12 +91,15 @@ contract Rounds {
         uint64 durationBlocks; // 0 = default
         string description;    // what the round is about, e.g. "BTC goes up before FOMC"
         string rules;          // how it resolves, in plain words
+        uint8 leverage;        // engine leverage, 0 = engine default
     }
 
     struct Entry {
         uint32 index; // 1-based slot in the round tree, 0 = not entered
         uint256 stake;
         bool claimed;
+        uint256 accAt;  // accYieldPerBalance when the stake last changed
+        uint256 earned; // base yield of this stake (and prize) booked so far, final at claim
     }
 
     uint256 constant BPS = 10_000;
@@ -158,7 +163,8 @@ contract Rounds {
     event StrikeSet(uint256 indexed id, uint256 strike);
     event DrawRequested(uint256 indexed id, uint64 sequence);
     event Settled(uint256 indexed id, uint256 finalPrice, bool thesisWon, address[3] winners);
-    event Claimed(uint256 indexed id, address indexed user, uint256 prize);
+    event Claimed(uint256 indexed id, address indexed user, uint256 prize, uint256 earned);
+    event Paid(address indexed user, uint256 amount);
     event EngineSet(address engine);
     event EngineOpened(uint256 indexed id, uint256 margin);
     event EngineSkipped(uint256 indexed id, uint256 budget);
@@ -277,6 +283,7 @@ contract Rounds {
         uint64 entryEnd = uint64(block.number) + (p.entryBlocks == 0 ? defaultEntryBlocks : p.entryBlocks);
         uint64 end = entryEnd + (p.durationBlocks == 0 ? defaultDurationBlocks : p.durationBlocks);
         id = _createRound(p.asset, p.marketId, p.thesis, p.bonus, entryEnd, end);
+        rounds[id].leverage = p.leverage;
         descriptionOf[id] = p.description;
         rulesOf[id] = p.rules;
         emit RoundText(id, p.description, p.rules);
@@ -422,6 +429,7 @@ contract Rounds {
         if (balanceOf[msg.sender] - lockedOf[msg.sender] < stake) revert InsufficientFree();
 
         Entry storage e = entries[id][msg.sender];
+        _bookEarned(e);
         if (e.index == 0) {
             e.index = ++r.count;
             userAt[id][e.index] = msg.sender;
@@ -442,31 +450,38 @@ contract Rounds {
         if (r.status != Status.Open || block.number > r.entryEnd) revert WrongPhase();
         if (e.stake == 0) revert NotEntered();
 
+        harvest();
+        _accrue(msg.sender);
+        _bookEarned(e);
         _treeSub(id, r.count, e.index, e.stake);
         r.totalStake -= e.stake;
         lockedOf[msg.sender] -= e.stake;
         e.stake = 0; // keep the slot, a later enter reuses it
         emit Exited(id, msg.sender);
+        _payout(msg.sender);
     }
 
-    /// @notice After settlement: free the stake and add the prize to the balance. Anyone can call for a user.
-    function claim(uint256 id, address user) external returns (uint256 prize) {
-        Entry storage e = entries[id][user];
-        if (rounds[id].status != Status.Settled) revert WrongPhase();
-        if (e.stake == 0 || e.claimed) revert NotEntered();
-
+    /// @notice After settlement: free the stakes of these rounds and send everything free (stakes,
+    /// prizes, base yield) to the wallet. One call for one round or for all of them.
+    /// Prizes are credited at the draw, so they earn base yield until this call.
+    function claim(uint256[] calldata ids) external returns (uint256 paid) {
         harvest();
-        _accrue(user);
-        e.claimed = true;
-        lockedOf[user] -= e.stake;
-        prize = prizeOf[id][user];
-        if (prize > 0) {
-            balanceOf[user] += prize;
-            totalBalances += prize;
-            reserved -= prize;
+        _accrue(msg.sender);
+        for (uint256 i; i < ids.length; i++) {
+            uint256 id = ids[i];
+            Round storage r = rounds[id];
+            Entry storage e = entries[id][msg.sender];
+            if (r.status != Status.Settled) revert WrongPhase();
+            if (e.stake == 0 || e.claimed) revert NotEntered();
+            uint256 prize = prizeOf[id][msg.sender];
+            _bookEarned(e);
+            if (prize > 0) e.earned += prize * (accYieldPerBalance - r.accAtDraw) / ACC;
+            e.claimed = true;
+            lockedOf[msg.sender] -= e.stake;
+            emit Claimed(id, msg.sender, prize, e.earned);
         }
-        _syncDebt(user);
-        emit Claimed(id, user, prize);
+        _syncDebt(msg.sender);
+        paid = _payout(msg.sender);
     }
 
     // ---------------------------------------------------------------- views
@@ -490,6 +505,17 @@ contract Rounds {
 
     function getRound(uint256 id) external view returns (Round memory) {
         return rounds[id];
+    }
+
+    /// @notice Base yield of a user's stake (and prize) in a round: live until claim, then final.
+    function earnedOf(uint256 id, address user) external view returns (uint256) {
+        Entry storage e = entries[id][user];
+        if (e.claimed) return e.earned;
+        uint256 acc = accYieldPerBalance;
+        uint256 earned = e.earned + e.stake * (acc - e.accAt) / ACC;
+        uint256 prize = prizeOf[id][user];
+        if (prize > 0) earned += prize * (acc - rounds[id].accAtDraw) / ACC;
+        return earned;
     }
 
     function drawFee() external view returns (uint256) {
@@ -542,7 +568,7 @@ contract Rounds {
         if (address(engine) == address(0) || margin == 0) return;
         vault.withdraw(margin, address(this), address(this));
         token.approve(address(engine), margin);
-        try engine.open(id, r.marketId, r.thesis == Thesis.Bullish, margin) {
+        try engine.open(id, r.marketId, r.thesis == Thesis.Bullish, margin, r.leverage) {
             r.budget = 0;
             r.borrowed = margin;
             reserved -= margin;
@@ -572,6 +598,23 @@ contract Rounds {
         totalBalances += amount;
         _syncDebt(msg.sender);
         emit Deposited(msg.sender, amount);
+    }
+
+    /// @dev Book the base yield of the current stake up to now (call before the stake changes).
+    function _bookEarned(Entry storage e) internal {
+        if (e.stake > 0) e.earned += e.stake * (accYieldPerBalance - e.accAt) / ACC;
+        e.accAt = accYieldPerBalance;
+    }
+
+    /// @dev Send the whole free balance to the user's wallet.
+    function _payout(address user) internal returns (uint256 amount) {
+        amount = balanceOf[user] - lockedOf[user];
+        if (amount == 0) return 0;
+        balanceOf[user] -= amount;
+        totalBalances -= amount;
+        _syncDebt(user);
+        _push(user, amount);
+        emit Paid(user, amount);
     }
 
     function _pending(address user) internal view returns (uint256) {
@@ -623,9 +666,18 @@ contract Rounds {
 
         uint256 second = k > 1 ? r.budget * SECOND_BPS / BPS : 0;
         uint256 third = k > 2 ? r.budget * THIRD_BPS / BPS : 0;
-        prizeOf[id][r.winners[0]] = r.budget - second - third;
-        if (k > 1) prizeOf[id][r.winners[1]] = second;
-        if (k > 2) prizeOf[id][r.winners[2]] = third;
+        uint256[3] memory prize = [r.budget - second - third, second, third];
+        // Credit prizes now, so they earn base yield until the winner claims.
+        r.accAtDraw = accYieldPerBalance;
+        for (uint256 i; i < k; i++) {
+            address w = r.winners[i];
+            prizeOf[id][w] = prize[i];
+            _accrue(w);
+            balanceOf[w] += prize[i];
+            _syncDebt(w);
+        }
+        totalBalances += r.budget;
+        reserved -= r.budget;
 
         r.status = Status.Settled;
         emit Settled(id, r.finalPrice, true, r.winners);
