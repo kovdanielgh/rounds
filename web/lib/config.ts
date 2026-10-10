@@ -1,12 +1,23 @@
+import { getAddress } from "viem";
 import { monadTestnet } from "viem/chains";
 
 export const chain = monadTestnet;
 /** Every read and write names the chain: reads must not follow the wallet when it sits on another network. */
 export const CHAIN_ID = monadTestnet.id;
-export const ROUNDS = process.env.NEXT_PUBLIC_ROUNDS as `0x${string}`;
-export const AUSD = process.env.NEXT_PUBLIC_AUSD as `0x${string}`;
-export const PRICE_SOURCE = process.env.NEXT_PUBLIC_PRICE_SOURCE as `0x${string}`;
-export const ENGINE = process.env.NEXT_PUBLIC_ENGINE as `0x${string}`;
+/**
+ * Address from an env var, cleaned: a copy-paste with spaces or a trailing dot must not break the site.
+ * Keeps "0x" + 40 hex characters and fixes the checksum.
+ */
+function envAddress(v: string | undefined) {
+  const m = (v ?? "").match(/0x[0-9a-fA-F]{40}/);
+  return (m ? getAddress(m[0]) : undefined) as `0x${string}`;
+}
+
+// NEXT_PUBLIC_* must be read with the full literal name, so Next can inline them at build time.
+export const ROUNDS = envAddress(process.env.NEXT_PUBLIC_ROUNDS);
+export const AUSD = envAddress(process.env.NEXT_PUBLIC_AUSD);
+export const PRICE_SOURCE = envAddress(process.env.NEXT_PUBLIC_PRICE_SOURCE);
+export const ENGINE = envAddress(process.env.NEXT_PUBLIC_ENGINE);
 /** Our own wallets, marked "team" on the Season page (honest stats). */
 export const TEAM = (process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe")
   .toLowerCase()

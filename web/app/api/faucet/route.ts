@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { erc20Abi } from "@/lib/abi";
 import { AUSD, chain } from "@/lib/config";
 
-const FAUCET = process.env.NEXT_PUBLIC_FAUCET as `0x${string}`;
+const FAUCET = (process.env.NEXT_PUBLIC_FAUCET ?? "").match(/0x[0-9a-fA-F]{40}/)?.[0] as `0x${string}` | undefined;
 const faucetAbi = [
   { type: "function", name: "drip", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }], outputs: [] },
   { type: "function", name: "canDrip", stateMutability: "view", inputs: [{ name: "to", type: "address" }], outputs: [{ type: "bool" }] },
