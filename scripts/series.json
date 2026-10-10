@@ -1,14 +1,45 @@
 {
-  "_comment": "Each series keeps one open round (or pair). When its entry window closes, the scheduler opens the next one. Blocks: ~0.3 s on Monad testnet (1 h = 12000). Keep durationBlocks a bit below entryBlocks, so the previous position on the same market is closed before the next one opens.",
+  "_comment": "Each series keeps one open round (or pair). When its entry window closes, the scheduler opens the next one. Blocks: ~0.3 s on Monad testnet (1 h = 12000). Keep durationBlocks a bit below entryBlocks, so the previous position on the same market is closed before the next one opens. endAtUtc: the round always ends at this UTC time (Round of the day); entry is open until durationBlocks before it. endDow: day of week for endAtUtc (0 = Sunday). waitSettle: open the next round only after the previous one settled. jackpot: bonus starts at base, grows by step (up to max) after a round nobody won, resets after a win.",
   "series": [
+    {
+      "name": "round-of-the-day",
+      "endAtUtc": "18:00",
+      "durationBlocks": 23841,
+      "rounds": [
+        {
+          "asset": "ETH",
+          "marketId": 32,
+          "thesis": 1,
+          "leverage": 12,
+          "bonus": 25000000,
+          "description": "Round of the day: where does ETH go by 18:00 UTC? Bulls side, 12x on Perpl.",
+          "rules": "Start price: Perpl price when entry closes. Final: price at 18:00 UTC. Above the start price: Bulls win. Your money always comes back."
+        },
+        {
+          "asset": "ETH",
+          "marketId": 32,
+          "thesis": 2,
+          "leverage": 12,
+          "bonus": 25000000,
+          "description": "Round of the day: where does ETH go by 18:00 UTC? Bears side, 12x on Perpl.",
+          "rules": "Start price: Perpl price when entry closes. Final: price at 18:00 UTC. Below the start price: Bears win. Your money always comes back."
+        }
+      ]
+    },
     {
       "name": "quick-sol",
       "entryBlocks": 12000,
       "durationBlocks": 3000,
       "rounds": [
-        { "asset": "SOL", "marketId": 48, "thesis": 1, "leverage": 10, "bonus": 5000000,
+        {
+          "asset": "SOL",
+          "marketId": 48,
+          "thesis": 1,
+          "leverage": 10,
+          "bonus": 5000000,
           "description": "Quick round: SOL goes up in 15 minutes. The prize pool trades a 10x SOL long on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. Your money always comes back." }
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. Your money always comes back."
+        }
       ]
     },
     {
@@ -16,22 +47,24 @@
       "entryBlocks": 72000,
       "durationBlocks": 70000,
       "rounds": [
-        { "asset": "BTC", "marketId": 16, "thesis": 1, "leverage": 15, "bonus": 15000000,
+        {
+          "asset": "BTC",
+          "marketId": 16,
+          "thesis": 1,
+          "leverage": 15,
+          "bonus": 15000000,
           "description": "BTC in the next 6 hours: up or down? Pick a side. Bulls side, 15x on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike: Bulls win. Your money always comes back." },
-        { "asset": "BTC", "marketId": 16, "thesis": 2, "leverage": 15, "bonus": 15000000,
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike: Bulls win. Your money always comes back."
+        },
+        {
+          "asset": "BTC",
+          "marketId": 16,
+          "thesis": 2,
+          "leverage": 15,
+          "bonus": 15000000,
           "description": "BTC in the next 6 hours: up or down? Pick a side. Bears side, 15x on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Below strike: Bears win. Your money always comes back." }
-      ]
-    },
-    {
-      "name": "eth-moonshot",
-      "entryBlocks": 288000,
-      "durationBlocks": 286000,
-      "rounds": [
-        { "asset": "ETH", "marketId": 32, "thesis": 2, "leverage": 12, "bonus": 25000000,
-          "description": "Moonshot: ETH goes down over the next day. The prize pool trades a 12x ETH short on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Below strike wins. Your money always comes back." }
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Below strike: Bears win. Your money always comes back."
+        }
       ]
     },
     {
@@ -39,9 +72,47 @@
       "entryBlocks": 288000,
       "durationBlocks": 286000,
       "rounds": [
-        { "asset": "MON", "marketId": 64, "thesis": 1, "leverage": 3, "bonus": 15000000,
+        {
+          "asset": "MON",
+          "marketId": 64,
+          "thesis": 1,
+          "leverage": 3,
+          "bonus": 15000000,
           "description": "Steady: Monad goes up over the next day. The prize pool trades a 3x MON long on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. Your money always comes back." }
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. Your money always comes back."
+        }
+      ]
+    },
+    {
+      "name": "jackpot-week",
+      "endAtUtc": "18:00",
+      "endDow": 0,
+      "durationBlocks": 11921,
+      "waitSettle": true,
+      "jackpot": {
+        "base": 100000000,
+        "step": 50000000,
+        "max": 500000000
+      },
+      "rounds": [
+        {
+          "asset": "SOL",
+          "marketId": 48,
+          "thesis": 1,
+          "leverage": 10,
+          "bonus": 100000000,
+          "description": "Jackpot of the week: SOL by Sunday 18:00 UTC. Bulls side.",
+          "rules": "Start price: Perpl price when entry closes (Sunday 17:00 UTC). Final: price at Sunday 18:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
+        },
+        {
+          "asset": "SOL",
+          "marketId": 48,
+          "thesis": 2,
+          "leverage": 10,
+          "bonus": 100000000,
+          "description": "Jackpot of the week: SOL by Sunday 18:00 UTC. Bears side.",
+          "rules": "Start price: Perpl price when entry closes (Sunday 17:00 UTC). Final: price at Sunday 18:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
+        }
       ]
     }
   ]

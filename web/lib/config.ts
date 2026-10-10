@@ -53,3 +53,10 @@ export const riskOf = (lev: number) => (lev >= 10 ? "Moonshot" : "Steady");
 
 export const assetMeta = (asset: string) =>
   ASSETS[asset] ?? { name: asset, glyph: asset.slice(0, 1), hue: 200, priceDecimals: 0 };
+
+/** "Round of the day": the series that always ends at the same UTC time (scheduler: endAtUtc). */
+export const isRoundOfDay = (description: string) => description.startsWith("Round of the day");
+
+/** Jackpot rounds: long rounds with a big prize that grows when nobody wins (scheduler: jackpot). */
+export const isJackpot = (description: string) => description.startsWith("Jackpot");
+

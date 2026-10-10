@@ -5,7 +5,7 @@ import Art from "./Art";
 import Pool from "./Pool";
 import ProgressBar from "./ProgressBar";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS, THESIS, leverageOf, riskOf } from "@/lib/config";
+import { BLOCK_SECONDS, THESIS, leverageOf, riskOf, isRoundOfDay, isJackpot } from "@/lib/config";
 import { fmtDuration, fmtPrice } from "@/lib/format";
 
 export function statusText(r: RoundView, block?: bigint) {
@@ -40,6 +40,7 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
         <div className="card-title">
           <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
           <h3>{r.asset}</h3>
+          {isRoundOfDay(r.description) && <span className="pill day">☀ Round of the day</span>}{isJackpot(r.description) && <span className="pill jackpot">🏆 Jackpot</span>}
           <span className="lev" title={`${leverageOf(r.marketId, r.leverage)}x on Perpl`}>{riskOf(leverageOf(r.marketId, r.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(r, block)}</div>

@@ -5,7 +5,7 @@ import MirrorArt from "./MirrorArt";
 import Pool from "./Pool";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { TOKEN_SYMBOL, leverageOf, riskOf } from "@/lib/config";
+import { TOKEN_SYMBOL, leverageOf, riskOf, isRoundOfDay, isJackpot } from "@/lib/config";
 import { fmtPrice, fmtToken } from "@/lib/format";
 
 function Side({ r, label }: { r: RoundView; label: string }) {
@@ -39,6 +39,12 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
           <span className="tag">Bulls</span>
           <h3>{bull.asset}</h3>
           <span className="tag bear">Bears</span>
+
+        </div>
+        {/* Pills on their own row: the title stays centered on every screen. */}
+        <div className="pills">
+          {isRoundOfDay(bull.description) && <span className="pill day">☀ Round of the day</span>}
+          {isJackpot(bull.description) && <span className="pill jackpot">🏆 Jackpot · grows every week nobody wins</span>}
           <span className="lev" title={`${leverageOf(bull.marketId, bull.leverage)}x on Perpl`}>{riskOf(leverageOf(bull.marketId, bull.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(bull, block)}</div>

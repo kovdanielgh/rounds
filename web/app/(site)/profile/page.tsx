@@ -11,12 +11,41 @@ import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID } from "@/lib/config";
+import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID, BLOCK_SECONDS } from "@/lib/config";
 import { fmtToken, fmtYield, shortAddr } from "@/lib/format";
 
 type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
 
 /** Profit of the row: prize (if any) plus the base yield of the stake and prize. Deposit is never lost. */
+/**
+ * Days in a row (UTC) with at least one round, counted to today or yesterday, and the best run.
+ * No pressure: missing a day just starts a new count.
+ */
+function streakOf(rows: Row[], block?: bigint) {
+  const now = Math.floor(Date.now() / 1000);
+  const days = new Set(
+    rows.map((x) => {
+      const ago = block && block > x.r.entryEnd ? Number(block - x.r.entryEnd) * BLOCK_SECONDS : 0;
+      return Math.floor((now - ago) / 86_400);
+    }),
+  );
+  const today = Math.floor(now / 86_400);
+  let d = days.has(today) ? today : today - 1;
+  let current = 0;
+  while (days.has(d)) {
+    current++;
+    d--;
+  }
+  let best = 0;
+  for (const day of days) {
+    if (days.has(day - 1)) continue; // start of a run
+    let n = 0;
+    while (days.has(day + n)) n++;
+    best = Math.max(best, n);
+  }
+  return { current, best, playedToday: days.has(today) };
+}
+
 function Result({ x, me }: { x: Row; me?: string }) {
   const place = x.r.winners.findIndex((w) => w.toLowerCase() === me?.toLowerCase());
   if (x.prize > 0n)
@@ -83,6 +112,7 @@ export default function Profile() {
   const active = rows.filter((x) => x.stake > 0n && !x.claimed);
   const history = rows.filter((x) => x.claimed || x.stake === 0n);
   const claimable = active.filter((x) => x.r.phase === 4);
+  const streak = streakOf(rows.filter((x) => x.stake > 0n || x.claimed), block);
   const shown = tab === "active" ? active : history;
 
   async function act(target: Row[], kind: "claim" | "exit") {
@@ -108,7 +138,17 @@ export default function Profile() {
         <dl className="stats">
           <div><dt>In Rounds (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
           <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
+          <div>
+            <dt>Streak</dt>
+            <dd>
+              {streak.current > 0 ? `${streak.current} day${streak.current > 1 ? "s" : ""} in a row 🔥` : "—"}
+              {streak.best > streak.current && <span className="muted small"> · best {streak.best}</span>}
+            </dd>
+          </div>
         </dl>
+        {streak.current > 0 && !streak.playedToday && (
+          <p className="muted small">Play a round today to make it {streak.current + 1} days. No rush: a new run can start any day.</p>
+        )}
         <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
         {error && <div className="error small">{error}</div>}
       </div>

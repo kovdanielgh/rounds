@@ -32,8 +32,12 @@ export default function Home() {
     rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1)),
   );
   // Cards that leave (entry window closed) pop like bubbles; the rest glide to their new place.
-  // Mirror pairs first: they take a full row, so the grid of single cards below has no holes.
-  const ordered = [...shown.filter((it) => it.kind === "mirror"), ...shown.filter((it) => it.kind === "single")];
+  // Quick rounds first, long ones (jackpots) last. Mirror pairs take a full row, so the order leaves no holes.
+  const lengthOf = (it: Item) => {
+    const r = it.kind === "mirror" ? it.bull : it.r;
+    return Number(r.end - r.start);
+  };
+  const ordered = [...shown].sort((a, b) => lengthOf(a) - lengthOf(b));
   const list = usePopList(ordered, itemKey, tab);
   const grid = useFlip<HTMLDivElement>();
 

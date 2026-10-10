@@ -125,25 +125,59 @@ async function keeperTick() {
 const loadState = () => (existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {});
 const saveState = (s) => writeFileSync(STATE, JSON.stringify(s, null, 2));
 const b32 = (t) => stringToHex(t, { size: 32 });
+const BLOCK_SECONDS = 0.302; // measured on Monad testnet
+
+/**
+ * Entry and round length in blocks. A series with endAtUtc ("18:00") always ends at that UTC time:
+ * the round lasts durationBlocks, and entry stays open until then (at least 30 minutes, else tomorrow).
+ */
+function timing(s, nowSec) {
+  if (!s.endAtUtc) return { entryBlocks: BigInt(s.entryBlocks), durationBlocks: BigInt(s.durationBlocks) };
+  const [h, m] = s.endAtUtc.split(":").map(Number);
+  const d = new Date(nowSec * 1000);
+  let target = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, m) / 1000;
+  const live = s.durationBlocks * BLOCK_SECONDS;
+  // endDow (0 = Sunday): weekly; otherwise daily.
+  const ok = (t) => t - nowSec >= live + 1800 && (s.endDow === undefined || new Date(t * 1000).getUTCDay() === s.endDow);
+  while (!ok(target)) target += 86400;
+  return { entryBlocks: BigInt(Math.round((target - nowSec - live) / BLOCK_SECONDS)), durationBlocks: BigInt(s.durationBlocks) };
+}
 
 async function schedulerTick() {
   if (!owner) return;
   const { series } = JSON.parse(readFileSync(CONFIG, "utf8"));
   const state = loadState();
+  state.bonus ??= {};
   for (const s of series) {
     const id = state[s.name];
-    if (id && Number(await read("phase", [BigInt(id)])) === 1) continue; // window still open
+    const phase = id ? Number(await read("phase", [BigInt(id)])) : 0;
+    if (phase === 1) continue; // window still open
+    if (s.waitSettle && id && phase !== 4) continue; // jackpot: the next one opens after the result
+    // Growing jackpot: +step after a round nobody won, back to base after a win.
+    let bonus;
+    if (s.jackpot) {
+      const prev = state.bonus[s.name];
+      if (!id || prev === undefined) bonus = s.jackpot.base;
+      else {
+        const rs = await Promise.all(s.rounds.map((_, k) => read("getRound", [BigInt(id + k)])));
+        const someoneWon = rs.some((r) => r.thesisWon && !/^0x0+$/.test(r.winners[0]));
+        bonus = someoneWon ? s.jackpot.base : Math.min(s.jackpot.max, prev + s.jackpot.step);
+      }
+      state.bonus[s.name] = bonus;
+    }
     if (DRY_RUN) { log(`[dry run] ${s.name}: would open the next round (current ${id ?? "none"} is closed)`); continue; }
+    const now = Number((await client.getBlock()).timestamp);
+    const t = timing(s, now);
     const params = s.rounds.map((r) => ({
-      asset: b32(r.asset), marketId: BigInt(r.marketId), thesis: r.thesis, bonus: BigInt(r.bonus),
-      entryBlocks: BigInt(s.entryBlocks), durationBlocks: BigInt(s.durationBlocks),
+      asset: b32(r.asset), marketId: BigInt(r.marketId), thesis: r.thesis, bonus: BigInt(bonus ?? r.bonus),
+      entryBlocks: t.entryBlocks, durationBlocks: t.durationBlocks,
       description: r.description, rules: r.rules, leverage: r.leverage,
     }));
     await send(owner, "createRounds", [params]);
     const count = Number(await read("roundCount"));
     state[s.name] = count - s.rounds.length + 1;
     saveState(state);
-    log(`${s.name}: opened round(s) ${state[s.name]}..${count}`);
+    log(`${s.name}: opened round(s) ${state[s.name]}..${count}${bonus ? `, jackpot ${bonus / 1e6} USD each side` : ""}`);
   }
 }
 
