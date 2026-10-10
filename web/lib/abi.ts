@@ -1,4 +1,5 @@
 // Generated from contracts/out (forge build). Only the parts the web app uses.
+
 export const roundsAbi = [
   {
     "type": "function",
