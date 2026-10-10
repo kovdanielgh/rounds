@@ -54,7 +54,10 @@ flowchart LR
     B --> C["<b>Closed</b><br/>stakes locked"]
     C -- "round ends" --> D["Final = Perpl price<br/>Position closes"]
     D --> Q{"Idea correct?"}
-    Q -- "yes" --> F["Pyth Entropy<br/>draws 3 winners"]
+    Q -- "yes" --> R{"Rollover round<br/>and less than<br/>3 in a row?"}
+    R -- "yes" --> N["Pool moves into<br/>the next round"]
+    R -- "no" --> F["Pyth Entropy<br/>draws 3 winners"]
+    N --> H2
     Q -- "no" --> G["Pool goes back<br/>to the treasury"]
     F --> H["<b>Claim</b><br/>deposit + prize + yield<br/>to your wallet"]
     G --> H2["<b>Claim</b><br/>deposit + yield<br/>to your wallet"]
@@ -66,6 +69,18 @@ flowchart LR
 | **Closed** | Wait | The strike is fixed. The position on Perpl is open. Your stake is locked. |
 | **Drawing** | Wait (about 2 blocks) | Pyth Entropy sends a random number. The contract picks 3 winners. |
 | **Settled** | Claim | One click sends your deposit, prize and yield to your wallet |
+
+### Kinds of rounds (live now)
+
+| Round | How it works |
+|---|---|
+| **Quick rounds** | Every hour, 15 minutes. SOL (rollover) and ZEC. |
+| **Rollover** | A won pool is not drawn. It moves into the next round of the series and trades again on Perpl. The third win in a row draws the big pool. A loss sends the pool back to the treasury. |
+| **Bulls vs Bears pairs** | BTC every 6 hours. Two rounds on the same blocks, one per side. |
+| **Round of the day** | ETH, always ends at 18:00 UTC. |
+| **Jackpot of the week** | ETH, Sunday 20:00 UTC. 100 USD, +50 USD after every week nobody wins (up to 500). |
+
+Each series is a few lines in `scripts/series.json`. The rollover link is on-chain: `linkRide(id, next)`, at most `maxRideLegs` (3) pools in a row.
 
 ---
 
@@ -142,6 +157,8 @@ All our contracts are **verified on MonadScan**: click an address to read the so
 | Pyth Entropy | [`0x825c…3c07`](https://testnet.monadscan.com/address/0x825c0390f379C631f3Cf11A82a37D20BddF93c07) | Random numbers |
 | Perpl Exchange | [`0x1964…80cc`](https://testnet.monadscan.com/address/0x1964C32f0bE608E7D29302AFF5E61268E72080cc) | On-chain perpetuals order book |
 
+The first `Rounds` contract ([`0xF265…5bd0`](https://testnet.monadscan.com/address/0xF265552D95De56AecdC1711966f2C17f89965bd0#code), before rollover) only finishes its last rounds. Players take their money out of it from the profile page.
+
 Leverage caps per market: BTC 15x, ETH 12x, SOL 10x, MON 3x. Each round sets its own leverage up to the cap.
 
 ---
@@ -163,10 +180,11 @@ set -a; . ../.env; set +a; forge test        # + 9 fork tests on real Perpl (nee
 ```bash
 cd bots && npm ci && npm start   # needs MONAD_TESTNET_RPC, ROUNDS, KEEPER_PK, PRIVATE_KEY in ../.env
 DRY_RUN=1 npm start              # read the chain and log what it would send, send nothing
+SCHEDULER=0 ROUNDS=0x… npm start # keeper only: finish the rounds of an old contract
 ```
 
 - **Keeper:** calls `settleMany`, then `setStrikeMany`, at the right block, with a key without owner rights. If a call fails because the window passed (for example after downtime), it retries with the owner key.
-- **Scheduler:** keeps one open round (or mirror pair) per series from `scripts/series.json`, and opens the next one when a window closes.
+- **Scheduler:** keeps one open round (or mirror pair) per series from `scripts/series.json`, and opens the next one when a window closes. It grows the weekly jackpot and links rollover rounds (`linkRide`).
 
 The keeper decides nothing: the contract reads the price on-chain, and anyone can make these calls inside the window.
 
@@ -188,7 +206,7 @@ contracts/src/Rounds.sol            rounds, vault accounting, draw, claim
 contracts/src/PerplEngine.sol       Perpl adapter (one position per round)
 contracts/src/PerplPriceSource.sol  on-chain price for strike and settle
 contracts/src/MockYieldVault.sol    ERC-4626 stand-in for Aave AUSD (static aToken wrapper)
-contracts/src/Faucet.sol            testnet faucet: 100 USD + 0.05 MON per day, daily cap
+contracts/src/Faucet.sol            testnet faucet: 100 USD + 0.3 MON per day, daily cap
 contracts/test/                     unit tests and Perpl fork tests
 bots/index.mjs                      keeper + scheduler (Node, viem)
 scripts/series.json                 round series: asset, side, leverage, prize, timing
@@ -206,8 +224,10 @@ web/                                Next.js app (site, /season, /embed, share ca
 
 ## Next
 
-1. Mainnet with Aave AUSD as the yield source (recommended by Agora).
-2. Risk levels per vault: Steady (3x) and Moonshot (15x).
-3. A jackpot that grows from lost rounds.
-4. The engine as a module for wallets and exchanges.
-5. Robinhood Chain for stock rounds (NVDA, TSLA).
+The full table with the prize multiples is in [docs/submission.md](docs/submission.md#next). In short:
+
+1. **More kinds of rounds, same contract:** Turbo on Perpl (convex payoff), stock and pre-IPO perps (NVDA, TSLA, SpaceX), event rounds on prediction markets, new-token baskets on Kuru or nad.fun, options.
+2. **Mainnet** with Aave AUSD as the yield source (recommended by Agora), deposit with any token or a card.
+3. **"Play again" by default:** the money stays in the series until the user takes it out.
+4. **The engine as a module** for wallets and exchanges, and an SDK without a second login.
+5. **Robinhood Chain** for stock rounds.
