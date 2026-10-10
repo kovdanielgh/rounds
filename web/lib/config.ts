@@ -1,6 +1,8 @@
 import { monadTestnet } from "viem/chains";
 
 export const chain = monadTestnet;
+/** Every read and write names the chain: reads must not follow the wallet when it sits on another network. */
+export const CHAIN_ID = monadTestnet.id;
 export const ROUNDS = process.env.NEXT_PUBLIC_ROUNDS as `0x${string}`;
 export const AUSD = process.env.NEXT_PUBLIC_AUSD as `0x${string}`;
 export const PRICE_SOURCE = process.env.NEXT_PUBLIC_PRICE_SOURCE as `0x${string}`;
@@ -11,6 +13,10 @@ export const TEAM = (process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58C
   .split(",");
 
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "";
+
+export const EXPLORER = "https://testnet.monadscan.com";
+export const txUrl = (hash: string) => `${EXPLORER}/tx/${hash}`;
+export const addressUrl = (a: string) => `${EXPLORER}/address/${a}`;
 
 export const TOKEN_DECIMALS = 6;
 export const TOKEN_SYMBOL = "USD"; // AUSD on-chain, shown as USD

@@ -92,6 +92,7 @@ export function humanError(e: unknown, fn = ""): string {
 export function useTx() {
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
+  const [lastHash, setLastHash] = useState<`0x${string}`>();
   const { writeContractAsync } = useWriteContract();
   const client = usePublicClient({ chainId: chain.id });
   const [phase, setPhase] = useState<TxPhase>("idle");
@@ -117,6 +118,7 @@ export function useTx() {
         setPhase("confirm");
         setStatus(`${prefix}Confirm in your wallet…`);
         const hash = await writeContractAsync(s.tx);
+        setLastHash(hash);
         setPhase("sending");
         setStatus(`${prefix}${s.label || "Sending…"}`);
         const receipt = await client!.waitForTransactionReceipt({ hash });
@@ -139,5 +141,5 @@ export function useTx() {
   }
 
   const busy = phase === "confirm" || phase === "sending";
-  return { run, status, error, busy, phase };
+  return { run, status, error, busy, phase, lastHash };
 }

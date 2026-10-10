@@ -2,7 +2,7 @@
 
 import { useReadContracts } from "wagmi";
 import { engineAbi, roundsAbi } from "@/lib/abi";
-import { ENGINE, ROUNDS, leverageOf } from "@/lib/config";
+import { ENGINE, ROUNDS, leverageOf, CHAIN_ID } from "@/lib/config";
 import type { RoundView } from "./useRounds";
 
 /**
@@ -14,16 +14,16 @@ export function useStats(rounds: RoundView[]) {
   const { data: totals } = useReadContracts({
     allowFailure: false,
     contracts: [
-      { address: ROUNDS, abi: roundsAbi, functionName: "totalBalances" },
-      { address: ROUNDS, abi: roundsAbi, functionName: "reserved" },
-      { address: ROUNDS, abi: roundsAbi, functionName: "treasury" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "totalBalances" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "reserved" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "treasury" },
     ],
     query: { refetchInterval: 15000 },
   });
   const traded = rounds.filter((r) => r.phase >= 2 && r.totalStake > 0n); // only these can have a position
   const { data: positions } = useReadContracts({
     allowFailure: true,
-    contracts: traded.map((r) => ({ address: ENGINE, abi: engineAbi, functionName: "positions", args: [r.id] }) as const),
+    contracts: traded.map((r) => ({ chainId: CHAIN_ID, address: ENGINE, abi: engineAbi, functionName: "positions", args: [r.id] }) as const),
     query: { enabled: !!ENGINE && traded.length > 0, refetchInterval: 30000 },
   });
 

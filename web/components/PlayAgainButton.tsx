@@ -5,7 +5,7 @@ import { useAccount, useReadContract } from "wagmi";
 import type { RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS } from "@/lib/config";
+import { AUSD, ROUNDS, CHAIN_ID } from "@/lib/config";
 
 /** Next open round of the same series: same asset, side and leverage. */
 export function nextRoundOf(r: RoundView, rounds: RoundView[]) {
@@ -23,17 +23,18 @@ export default function PlayAgainButton({ r, stake, rounds, small, onDone }: {
   const { run, status, busy } = useTx();
   const next = nextRoundOf(r, rounds);
   const { data: allowance } = useReadContract({
+    chainId: CHAIN_ID,
     address: AUSD, abi: erc20Abi, functionName: "allowance", args: [address!, ROUNDS], query: { enabled: !!address },
   });
   if (!next || !address) return null;
 
   async function play() {
     const ok = await run([
-      { label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[r.id]] } },
+      { label: "Claiming…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[r.id]] } },
       ...((allowance ?? 0n) < stake
-        ? [{ label: "Enabling USD (once)…", tx: { address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
+        ? [{ label: "Enabling USD (once)…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
         : []),
-      { label: "Joining next round…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [next!.id, stake] } },
+      { label: "Joining next round…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [next!.id, stake] } },
     ] as Parameters<typeof run>[0]);
     if (ok) onDone?.();
   }

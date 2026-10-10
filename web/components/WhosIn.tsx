@@ -3,7 +3,7 @@
 import { useAccount, useReadContracts } from "wagmi";
 import type { RoundView } from "@/hooks/useRounds";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, CHAIN_ID } from "@/lib/config";
 import { fmtToken, shortAddr } from "@/lib/format";
 
 /** Players of the round, biggest stake first. After your first deposit you see yourself here. */
@@ -12,13 +12,13 @@ export default function WhosIn({ r }: { r: RoundView }) {
   const slots = Array.from({ length: r.count }, (_, i) => BigInt(i + 1));
   const { data: users } = useReadContracts({
     allowFailure: false,
-    contracts: slots.map((s) => ({ address: ROUNDS, abi: roundsAbi, functionName: "userAt", args: [r.id, s] }) as const),
+    contracts: slots.map((s) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "userAt", args: [r.id, s] }) as const),
     query: { enabled: r.count > 0, refetchInterval: 5000 },
   });
   const list = (users ?? []) as `0x${string}`[];
   const { data: entries } = useReadContracts({
     allowFailure: false,
-    contracts: list.map((u) => ({ address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, u] }) as const),
+    contracts: list.map((u) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, u] }) as const),
     query: { enabled: list.length > 0, refetchInterval: 5000 },
   });
   const players = list

@@ -6,7 +6,7 @@ import { maxUint256, parseUnits } from "viem";
 import { useAccount, useReadContracts } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL } from "@/lib/config";
+import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl } from "@/lib/config";
 import { fmtToken } from "@/lib/format";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
@@ -25,23 +25,26 @@ export default function DepositForm({ id }: { id: bigint }) {
   const { ready, authenticated, login } = usePrivy();
   const [amount, setAmount] = useState<string | null>(null); // null: use the suggested amount
   const [justIn, setJustIn] = useState(false);
-  const { run, status, error, busy } = useTx();
+  const { run, status, error, busy, lastHash } = useTx();
   const { rounds } = useRounds();
   const block = useBlock();
   const r = rounds.find((x) => x.id === id);
 
   const { data, refetch } = useReadContracts({
-    allowFailure: false,
+    allowFailure: true, // one failing read must not hide the others
     contracts: [
-      { address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!] },
-      { address: AUSD, abi: erc20Abi, functionName: "allowance", args: [address!, ROUNDS] },
-      { address: ROUNDS, abi: roundsAbi, functionName: "freeBalanceOf", args: [address!] },
-      { address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [id, address!] },
+      { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!] },
+      { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "allowance", args: [address!, ROUNDS] },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "freeBalanceOf", args: [address!] },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [id, address!] },
     ],
     query: { enabled: !!address, refetchInterval: 5000 },
   });
-  const loaded = data !== undefined;
-  const [wallet, allowance, free, entry] = data ?? [0n, 0n, 0n, undefined];
+  const loaded = data?.[0]?.status === "success";
+  const wallet = (data?.[0]?.result as bigint | undefined) ?? 0n;
+  const allowance = (data?.[1]?.result as bigint | undefined) ?? 0n;
+  const free = (data?.[2]?.result as bigint | undefined) ?? 0n;
+  const entry = data?.[3]?.result;
   const stake = (entry as readonly [number, bigint, boolean, bigint, bigint] | undefined)?.[1] ?? 0n;
   const side = r?.thesis === 2 ? "Bears" : "Bulls";
 
@@ -60,7 +63,7 @@ export default function DepositForm({ id }: { id: bigint }) {
 
   // Deposit uses either the free balance in Rounds or the wallet, never both at once.
   const max = wallet > free ? wallet : free;
-  const suggested = max >= 100n * ONE ? "100" : max >= ONE ? String(max / ONE) : "";
+  const suggested = !loaded || max >= 100n * ONE ? "100" : max >= ONE ? String(max / ONE) : "";
   const value = amount ?? suggested;
   let amt = 0n;
   try {
@@ -77,6 +80,9 @@ export default function DepositForm({ id }: { id: bigint }) {
       <span>
         {fmtToken(stake)} {TOKEN_SYMBOL} on {side}. Your money comes back when the round ends.
       </span>
+      {lastHash && (
+        <a className="tx-link small" href={txUrl(lastHash)} target="_blank" rel="noreferrer">View transaction ↗</a>
+      )}
     </div>
   );
 
@@ -103,13 +109,13 @@ export default function DepositForm({ id }: { id: bigint }) {
     if (amt === 0n || tooMuch) return;
     const steps =
       free >= amt
-        ? [{ label: "Entering…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "enter", args: [id, amt] } }]
+        ? [{ label: "Entering…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "enter", args: [id, amt] } }]
         : [
             // One-time permission for USD: every later deposit is a single signature.
             ...(allowance < amt
-              ? [{ label: "Enabling USD (once)…", tx: { address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
+              ? [{ label: "Enabling USD (once)…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
               : []),
-            { label: "Depositing…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [id, amt] } },
+            { label: "Depositing…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [id, amt] } },
           ];
     if (await run(steps as Parameters<typeof run>[0])) {
       setAmount(null);
@@ -155,7 +161,7 @@ export default function DepositForm({ id }: { id: bigint }) {
               onChange={(e) => setAmount(e.target.value.replace(",", "."))}
             />
           </div>
-          <button className="btn wide" onClick={submit} disabled={busy || !loaded || amt === 0n || tooMuch}>
+          <button className="btn wide" onClick={submit} disabled={busy || amt === 0n || tooMuch} /* not blocked while the balance loads: the wallet checks it too */>
             {label}
           </button>
         </>

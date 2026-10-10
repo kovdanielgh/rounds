@@ -16,7 +16,7 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf } from "@/lib/config";
+import { ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
@@ -29,13 +29,13 @@ export default function VaultPage() {
   const { address } = useAccount();
   const { run, status, error, busy } = useTx();
   const r = rounds.find((x) => x.id === id);
-  const { data: feeBps } = useReadContract({ address: ROUNDS, abi: roundsAbi, functionName: "feeBps" });
+  const { data: feeBps } = useReadContract({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "feeBps" });
 
   const { data: mine, refetch } = useReadContracts({
     allowFailure: false,
     contracts: [
-      { address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [id, address!] },
-      { address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [id, address!] },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [id, address!] },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [id, address!] },
     ],
     query: { enabled: !!address, refetchInterval: 3000 },
   });
@@ -115,6 +115,11 @@ export default function VaultPage() {
               <div><dt>Base yield (everyone)</dt><dd>~2% a year</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>
+            <p className="small">
+              <a className="tx-link" href={addressUrl(ENGINE)} target="_blank" rel="noreferrer">View the Perpl position (engine) ↗</a>
+              {" · "}
+              <a className="tx-link" href={addressUrl(ROUNDS)} target="_blank" rel="noreferrer">Contract ↗</a>
+            </p>
           </details>
 
           {r.phase === 1 && <DepositForm id={r.id} />}
@@ -127,7 +132,7 @@ export default function VaultPage() {
               className="btn ghost wide"
               disabled={busy}
               onClick={async () => {
-                await run([{ label: "Exiting…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "exitRound", args: [id] } }]);
+                await run([{ label: "Exiting…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "exitRound", args: [id] } }]);
                 refetch();
               }}
             >
@@ -157,7 +162,7 @@ export default function VaultPage() {
               className="btn wide"
               disabled={busy}
               onClick={async () => {
-                await run([{ label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[id]] } }]);
+                await run([{ label: "Claiming…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[id]] } }]);
                 refetch();
               }}
             >

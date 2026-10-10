@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useBalance, useReadContract } from "wagmi";
 import { erc20Abi } from "@/lib/abi";
-import { AUSD } from "@/lib/config";
+import { AUSD, CHAIN_ID } from "@/lib/config";
 
 /**
  * Test money for an empty wallet: it arrives by itself on the first visit (no crypto needed),
@@ -15,8 +15,9 @@ export default function FaucetButton() {
   const { authenticated } = usePrivy();
   const { address } = useAccount();
   const qc = useQueryClient();
-  const { data: mon } = useBalance({ address, query: { enabled: !!address, refetchInterval: 10000 } });
+  const { data: mon } = useBalance({ address, chainId: CHAIN_ID, query: { enabled: !!address, refetchInterval: 10000 } });
   const { data: usd } = useReadContract({
+    chainId: CHAIN_ID,
     address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!],
     query: { enabled: !!address, refetchInterval: 10000 },
   });

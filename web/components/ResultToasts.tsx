@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { useRounds } from "@/hooks/useRounds";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, THESIS, TOKEN_SYMBOL } from "@/lib/config";
+import { ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID } from "@/lib/config";
 import { fmtToken } from "@/lib/format";
 
 const load = (k: string): string[] => {
@@ -31,8 +31,8 @@ export default function ResultToasts() {
   const { data } = useReadContracts({
     allowFailure: false,
     contracts: settled.flatMap((r) => [
-      { address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, address!] } as const,
-      { address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, address!] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, address!] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, address!] } as const,
     ]),
     query: { enabled: !!address && settled.length > 0, refetchInterval: 10000 },
   });

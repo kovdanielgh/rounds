@@ -2,7 +2,7 @@
 
 import { useBlockNumber, useReadContract, useReadContracts } from "wagmi";
 import { priceSourceAbi, roundsAbi } from "@/lib/abi";
-import { BLOCK_SECONDS, PRICE_SOURCE, ROUNDS, leverageOf } from "@/lib/config";
+import { BLOCK_SECONDS, PRICE_SOURCE, ROUNDS, leverageOf, CHAIN_ID } from "@/lib/config";
 import { assetLabel } from "@/lib/format";
 
 export type RoundView = {
@@ -35,12 +35,13 @@ export type RoundView = {
 
 /** Current block, refreshed about every second. */
 export function useBlock() {
-  return useBlockNumber({ watch: true, query: { refetchInterval: 1000 } }).data;
+  return useBlockNumber({ chainId: CHAIN_ID, watch: true, query: { refetchInterval: 1000 } }).data;
 }
 
 /** All rounds with phase, texts and live price. Small n, one multicall. */
 export function useRounds() {
   const { data: count, isFetched: countFetched } = useReadContract({
+    chainId: CHAIN_ID,
     address: ROUNDS,
     abi: roundsAbi,
     functionName: "roundCount",
@@ -50,9 +51,9 @@ export function useRounds() {
   const { data: econ } = useReadContracts({
     allowFailure: false,
     contracts: [
-      { address: ROUNDS, abi: roundsAbi, functionName: "roundAprBps" },
-      { address: ROUNDS, abi: roundsAbi, functionName: "blocksPerYear" },
-      { address: ROUNDS, abi: roundsAbi, functionName: "treasury" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "roundAprBps" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "blocksPerYear" },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "treasury" },
     ],
     query: { refetchInterval: 15000 },
   });
@@ -62,10 +63,10 @@ export function useRounds() {
   const { data, isLoading } = useReadContracts({
     allowFailure: false,
     contracts: ids.flatMap((id) => [
-      { address: ROUNDS, abi: roundsAbi, functionName: "getRound", args: [id] } as const,
-      { address: ROUNDS, abi: roundsAbi, functionName: "phase", args: [id] } as const,
-      { address: ROUNDS, abi: roundsAbi, functionName: "descriptionOf", args: [id] } as const,
-      { address: ROUNDS, abi: roundsAbi, functionName: "rulesOf", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "getRound", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "phase", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "descriptionOf", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "rulesOf", args: [id] } as const,
     ]),
     query: { enabled: n > 0, refetchInterval: 3000 },
   });
@@ -110,12 +111,12 @@ export function useRounds() {
   const markets = [...new Set(rounds.map((r) => r.marketId))];
   const { data: prices } = useReadContracts({
     allowFailure: true,
-    contracts: markets.map((m) => ({ address: PRICE_SOURCE, abi: priceSourceAbi, functionName: "price", args: [m] }) as const),
+    contracts: markets.map((m) => ({ chainId: CHAIN_ID, address: PRICE_SOURCE, abi: priceSourceAbi, functionName: "price", args: [m] }) as const),
     query: { enabled: markets.length > 0, refetchInterval: 3000 },
   });
   const priceOf = new Map(markets.map((m, i) => [m, prices?.[i]?.result as bigint | undefined]));
 
-  const { data: head } = useBlockNumber({ watch: true, query: { refetchInterval: 3000 } });
+  const { data: head } = useBlockNumber({ chainId: CHAIN_ID, watch: true, query: { refetchInterval: 3000 } });
   const withLive = rounds.map((r) => {
     const ended = head !== undefined && head > r.end;
     const price = priceOf.get(r.marketId);

@@ -29,6 +29,20 @@ Rounds is a no-loss round on Monad.
 
 Your yield plays, your money stays.
 
+## Category and alternatives
+
+**Category:** prize-linked savings, rebuilt on Monad's on-chain order book.
+
+| What people use today | Good at | Where it falls short |
+|---|---|---|
+| Lottery tickets, sports bets | excitement, big prizes | the money is almost always lost |
+| Polymarket, perps | excitement, control | you can lose everything |
+| Lending (Morpho, Aave), savings accounts | safe | boring, about 4–5% a year |
+| PoolTogether | deposit comes back | small prizes (about 2.5% a year), pure luck, no choice |
+| Premium Bonds (UK) | deposit comes back, state guarantee | UK only, no crypto, no choice of side |
+
+**Rounds:** the deposit comes back, the prize grows from a real position on Perpl, and the user picks a side. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 44 tests.
+
 ## Why Monad
 
 - **The contract trades on an on-chain order book.** One transaction fixes the strike and places a real order on Perpl. This needs fast blocks and a fully on-chain order book.

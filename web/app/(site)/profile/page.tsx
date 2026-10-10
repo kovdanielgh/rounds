@@ -11,7 +11,7 @@ import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL } from "@/lib/config";
+import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID } from "@/lib/config";
 import { fmtToken, fmtYield, shortAddr } from "@/lib/format";
 
 type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
@@ -44,24 +44,24 @@ export default function Profile() {
   const { data: bal } = useReadContracts({
     allowFailure: false,
     contracts: [
-      { address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!] },
-      { address: ROUNDS, abi: roundsAbi, functionName: "balanceWithYield", args: [address!] },
+      { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!] },
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "balanceWithYield", args: [address!] },
     ],
     query: { enabled: !!address, refetchInterval: 4000 },
   });
   const { data: entries, refetch: refetchEntries } = useReadContracts({
     allowFailure: false,
-    contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, address!] }) as const),
+    contracts: rounds.map((r) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, address!] }) as const),
     query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
   });
   const { data: prizes, refetch: refetchPrizes } = useReadContracts({
     allowFailure: false,
-    contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, address!] }) as const),
+    contracts: rounds.map((r) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, address!] }) as const),
     query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
   });
   const { data: earned } = useReadContracts({
     allowFailure: false,
-    contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "earnedOf", args: [r.id, address!] }) as const),
+    contracts: rounds.map((r) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "earnedOf", args: [r.id, address!] }) as const),
     query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
   });
 
@@ -90,8 +90,8 @@ export default function Profile() {
     // Claim is one transaction for any number of rounds; stake + prize + yield go to the wallet.
     await run(
       (kind === "claim"
-        ? [{ label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [target.map((x) => x.r.id)] } }]
-        : [{ label: "Exiting…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "exitRound", args: [target[0].r.id] } }]
+        ? [{ label: "Claiming…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [target.map((x) => x.r.id)] } }]
+        : [{ label: "Exiting…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "exitRound", args: [target[0].r.id] } }]
       ) as Parameters<typeof run>[0],
     );
     setRowBusy(undefined);

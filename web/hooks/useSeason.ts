@@ -2,7 +2,7 @@
 
 import { useReadContracts } from "wagmi";
 import { roundsAbi } from "@/lib/abi";
-import { BLOCK_SECONDS, ROUNDS } from "@/lib/config";
+import { BLOCK_SECONDS, ROUNDS, CHAIN_ID } from "@/lib/config";
 import type { RoundView } from "./useRounds";
 
 export type Player = {
@@ -26,7 +26,7 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
 
   const { data: users } = useReadContracts({
     allowFailure: false,
-    contracts: slots.map(({ r, slot }) => ({ address: ROUNDS, abi: roundsAbi, functionName: "userAt", args: [r.id, slot] }) as const),
+    contracts: slots.map(({ r, slot }) => ({ chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "userAt", args: [r.id, slot] }) as const),
     query: { enabled: slots.length > 0, refetchInterval: 15000 },
   });
 
@@ -34,8 +34,8 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
   const { data: info, isLoading } = useReadContracts({
     allowFailure: false,
     contracts: pairs.flatMap(({ r, user }) => [
-      { address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, user] } as const,
-      { address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, user] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, user] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, user] } as const,
     ]),
     query: { enabled: pairs.length > 0, refetchInterval: 15000 },
   });
