@@ -155,12 +155,15 @@ set -a; . ../.env; set +a; forge test        # + 9 fork tests on real Perpl (nee
 
 `foundry.toml` points `solc` to a local binary. If you do not have `/opt/homebrew/bin/solc`, set `solc = "0.8.36"`.
 
-**Keeper and scheduler** (run 24/7 on a server as systemd services):
+**Bots: keeper and scheduler** (one light Node process, runs 24/7 on a small server as a systemd service):
 
 ```bash
-./scripts/keeper.sh      # calls setStrikeMany / settleMany at the right block; a key without owner rights
-./scripts/scheduler.sh   # keeps one open round per series from scripts/series.json; opens the next one when a window closes
+cd bots && npm ci && npm start   # needs MONAD_TESTNET_RPC, ROUNDS, KEEPER_PK, PRIVATE_KEY in ../.env
+DRY_RUN=1 npm start              # read the chain and log what it would send, send nothing
 ```
+
+- **Keeper:** calls `settleMany`, then `setStrikeMany`, at the right block, with a key without owner rights. If a call fails because the window passed (for example after downtime), it retries with the owner key.
+- **Scheduler:** keeps one open round (or mirror pair) per series from `scripts/series.json`, and opens the next one when a window closes.
 
 The keeper decides nothing: the contract reads the price on-chain, and anyone can make these calls inside the window.
 
@@ -183,8 +186,7 @@ contracts/src/PerplEngine.sol       Perpl adapter (one position per round)
 contracts/src/PerplPriceSource.sol  on-chain price for strike and settle
 contracts/src/MockYieldVault.sol    ERC-4626 stand-in for a Morpho vault
 contracts/test/                     unit tests and Perpl fork tests
-scripts/keeper.sh                   keeper bot
-scripts/scheduler.sh                round scheduler
+bots/index.mjs                      keeper + scheduler (Node, viem)
 scripts/series.json                 round series: asset, side, leverage, prize, timing
 web/                                Next.js app (site, /season, /embed, share cards)
 ```

@@ -1,0 +1,8 @@
+{
+  "name": "rounds-bots",
+  "private": true,
+  "type": "module",
+  "description": "Keeper and round scheduler for Rounds, one light Node process",
+  "scripts": { "start": "node index.mjs" },
+  "dependencies": { "viem": "2.56.5" }
+}
