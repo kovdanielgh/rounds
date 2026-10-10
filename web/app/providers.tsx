@@ -7,7 +7,12 @@ import { http } from "wagmi";
 import { chain, PRIVY_APP_ID } from "@/lib/config";
 
 const queryClient = new QueryClient();
-const wagmiConfig = createConfig({ chains: [chain], transports: { [chain.id]: http() } });
+// All reads of a render go out as one multicall in one JSON-RPC batch: fewer requests, fewer failures.
+const wagmiConfig = createConfig({
+  chains: [chain],
+  transports: { [chain.id]: http(undefined, { batch: true }) },
+  batch: { multicall: true },
+});
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (

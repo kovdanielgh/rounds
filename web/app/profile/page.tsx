@@ -23,10 +23,9 @@ function Result({ x, me }: { x: Row; me?: string }) {
         +{fmtToken(x.prize + x.earned)} {TOKEN_SYMBOL} · {["1st", "2nd", "3rd"][place] ?? "won"}
       </span>
     );
-  const note = x.r.phase < 4 ? "so far" : x.r.thesisWon ? "not drawn · deposit safe" : "thesis lost · deposit safe";
   return (
     <span className="yield">
-      +{fmtYield(x.earned)} {TOKEN_SYMBOL} <span className="muted">yield · {note}</span>
+      <span className="muted">{x.r.phase < 4 ? "Yield so far" : "Deposit safe"} · </span>+{fmtYield(x.earned)}
     </span>
   );
 }
@@ -72,7 +71,7 @@ export default function Profile() {
       </main>
     );
 
-  const [wallet, balance] = bal ?? [];
+  const [wallet, balance] = bal ?? []; // wagmi keeps the last good value if a refetch fails
   const rows: Row[] = rounds.flatMap((r, i) => {
     const e = entries?.[i];
     if (!e || e[0] === 0) return []; // never entered
@@ -131,7 +130,7 @@ export default function Profile() {
               <tr>
                 <th>Vault</th>
                 <th>Status</th>
-                <th className="num">My stake</th>
+                <th className="num">Stake</th>
                 <th className="num">Pool</th>
                 <th>Result</th>
                 <th />

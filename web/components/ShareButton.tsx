@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 
 /** Share a round result. The link opens a page whose card reads the prize from the contract. */
 export default function ShareButton({ id, text, small }: { id: bigint; text: string; small?: boolean }) {
+  // small: table version, one compact button without "Copy link"
   const { address } = useAccount();
   const [copied, setCopied] = useState(false);
   if (!address) return null;
@@ -31,8 +32,8 @@ export default function ShareButton({ id, text, small }: { id: bigint; text: str
 
   return (
     <span className="share-btns">
-      <button className={`btn ${small ? "small" : ""}`} onClick={share}>Share</button>
-      <button className={`btn ghost ${small ? "small" : ""}`} onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
+      <button className={small ? "btn small ghost" : "btn"} onClick={share}>{small ? "Share ↗" : "Share"}</button>
+      {!small && <button className="btn ghost" onClick={copy}>{copied ? "Copied" : "Copy link"}</button>}
     </span>
   );
 }
