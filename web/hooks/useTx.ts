@@ -70,8 +70,10 @@ export function humanError(e: unknown, fn = ""): string {
     return "You cancelled. Nothing was sent.";
   const known = revert && revertText(revert, fn);
   if (known) return known;
-  if (/insufficientfunds|insufficient funds|gas required exceeds|exceeds the balance of the account|insufficient balance for transfer/.test(text))
+  if (/insufficientfunds|insufficient funds|gas required exceeds|exceeds the balance of the account|insufficient balance for transfer|signer had insufficient balance/.test(text))
     return "You need a little MON for gas. Use Get test USD at the top.";
+  if (/erc20insufficientallowance|insufficient allowance|exceeds allowance/.test(text))
+    return "USD is not enabled for Rounds yet. Try again: the first deposit asks for it once.";
   if (/transfer amount exceeds balance|insufficient balance|erc20insufficientbalance/.test(text))
     return "You don't have enough USD for this amount. Use Get test USD at the top.";
   if (/switchchain|chain mismatch|unsupported chain|does not match the target chain/.test(text))
@@ -109,18 +111,25 @@ export function useTx() {
    */
   async function feeFields(tx: WriteArgs) {
     if (!client || !address) return {};
+    const t = tx as unknown as { address: `0x${string}`; abi: readonly unknown[]; functionName: string; args?: readonly unknown[]; value?: bigint };
+    const call = { address: t.address, abi: t.abi as never, functionName: t.functionName as never, args: t.args as never, value: t.value, account: address };
+    // 1. Dry run: if the call would revert, show the real reason here instead of a wallet's vague
+    //    "Missing or invalid parameters". This throw goes to humanError().
+    await client.simulateContract(call);
+    // 2. Our own gas and a legacy gas price: mobile wallets often reject EIP-1559 fields on a custom network.
+    let fields: { type: "legacy"; gas: bigint; gasPrice: bigint };
     try {
-      const t = tx as unknown as { address: `0x${string}`; abi: readonly unknown[]; functionName: string; args?: readonly unknown[]; value?: bigint };
-      const [gas, gasPrice] = await Promise.all([
-        client.estimateContractGas({ address: t.address, abi: t.abi as never, functionName: t.functionName as never, args: t.args as never, value: t.value, account: address }),
-        client.getGasPrice(),
-      ]);
-      // Monad charges the gas limit, so keep the buffer small.
-      return { type: "legacy" as const, gas: (gas * 115n) / 100n, gasPrice };
+      const [gas, gasPrice] = await Promise.all([client.estimateContractGas(call), client.getGasPrice()]);
+      fields = { type: "legacy", gas: (gas * 115n) / 100n, gasPrice }; // Monad charges the gas limit: small buffer
     } catch {
       return {};
     }
+    // 3. Not enough MON for gas: say it here, before the wallet shows "Signer had insufficient balance".
+    const mon = await client.getBalance({ address });
+    if (mon < fields.gas * fields.gasPrice + (t.value ?? 0n)) throw new Error("insufficient funds for gas");
+    return fields;
   }
+
 
   async function run(steps: Step[]) {
     clearTimeout(timer.current);
