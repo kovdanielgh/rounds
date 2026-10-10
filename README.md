@@ -101,6 +101,30 @@ Your chance to be drawn is your stake divided by all stakes in the round.
 
 ---
 
+## Embed a round in any wallet
+
+Wallets, exchanges and neobanks can add "play the market, keep your money" to their app. One round is one iframe. `live` always shows the current open round, so the link never goes stale.
+
+```tsx
+export function RoundCard({ asset = "BTC" }) {
+  return (
+    <iframe
+      src={`https://saverounds.vercel.app/embed/live?asset=${asset}`}
+      width={360}
+      height={760}
+      style={{ border: 0, borderRadius: 16 }}
+      title="Rounds"
+    />
+  );
+}
+```
+
+- `/embed/live` · `/embed/live?asset=BTC` · `/embed/<round id>`
+- Live demo inside a wallet: [saverounds.vercel.app/embed](https://saverounds.vercel.app/embed)
+- Next step: an SDK that uses the host wallet directly, without a second login.
+
+---
+
 ## Contracts on Monad testnet
 
 All our contracts are **verified on MonadScan**: click an address to read the source code, or call functions with Read/Write Contract.
@@ -162,7 +186,7 @@ contracts/test/                     unit tests and Perpl fork tests
 scripts/keeper.sh                   keeper bot
 scripts/scheduler.sh                round scheduler
 scripts/series.json                 round series: asset, side, leverage, prize, timing
-web/                                Next.js app
+web/                                Next.js app (site, /season, /embed, share cards)
 ```
 
 ---
