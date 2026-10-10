@@ -83,11 +83,11 @@ Testnet only. The legal structure (prize-linked savings vs. a market) is under r
 
 - **Regulation of prize draws.** In mirror pairs each user picks a side, so the product is closer to a market than to a draw. We will get legal advice before mainnet.
 - **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. A growing jackpot and options can add bigger prizes later.
-- **The testnet vault is a mock** with a fixed APR. On mainnet, a Morpho AUSD vault replaces it with no code change (both are ERC-4626).
+- **The testnet vault is a mock** with a fixed APR. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper (static aToken), with no change to the `Rounds` contract. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 
 ## Next
 
-1. Mainnet with a Morpho AUSD vault.
+1. Mainnet with Aave AUSD as the yield source (recommended by Agora), through the ERC-4626 wrapper.
 2. Risk levels per round: Steady (3x) and Moonshot (15x).
 3. A jackpot that grows from lost rounds.
 4. An SDK that uses the host wallet directly, without a second login.

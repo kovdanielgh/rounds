@@ -187,7 +187,7 @@ npm run dev
 contracts/src/Rounds.sol            rounds, vault accounting, draw, claim
 contracts/src/PerplEngine.sol       Perpl adapter (one position per round)
 contracts/src/PerplPriceSource.sol  on-chain price for strike and settle
-contracts/src/MockYieldVault.sol    ERC-4626 stand-in for a Morpho vault
+contracts/src/MockYieldVault.sol    ERC-4626 stand-in for Aave AUSD (static aToken wrapper)
 contracts/src/Faucet.sol            testnet faucet: 100 USD + 0.05 MON per day, daily cap
 contracts/test/                     unit tests and Perpl fork tests
 bots/index.mjs                      keeper + scheduler (Node, viem)
@@ -199,14 +199,14 @@ web/                                Next.js app (site, /season, /embed, share ca
 
 ## Status and limits
 
-- **Testnet only.** The yield vault is a mock with a fixed APR, paid from a reserve that we fund. On mainnet, a Morpho AUSD vault replaces it with no code change (both are ERC-4626).
+- **Testnet only.** The yield vault is a mock with a fixed APR, paid from a reserve that we fund. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper, with no change to `Rounds`. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 - **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. Options or outcome tokens can add convexity later.
 - **Mirror pairs:** the engine holds one position per market, so only one side of a pair trades.
 - **A random draw has legal risk** in some countries. In mirror pairs each user picks a side, which makes the product closer to a derivative.
 
 ## Next
 
-1. Mainnet with a Morpho AUSD vault.
+1. Mainnet with Aave AUSD as the yield source (recommended by Agora).
 2. Risk levels per vault: Steady (3x) and Moonshot (15x).
 3. A jackpot that grows from lost rounds.
 4. The engine as a module for wallets and exchanges.
