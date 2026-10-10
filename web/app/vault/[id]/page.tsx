@@ -9,7 +9,7 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, THESIS, TOKEN_SYMBOL } from "@/lib/config";
+import { ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
@@ -31,7 +31,7 @@ export default function VaultPage() {
     ],
     query: { enabled: !!address, refetchInterval: 3000 },
   });
-  const [, stake, claimed] = (mine?.[0] as readonly [number, bigint, boolean]) ?? [0, 0n, false];
+  const [, stake, claimed] = (mine?.[0] as readonly [number, bigint, boolean, bigint, bigint]) ?? [0, 0n, false];
   const prize = (mine?.[1] as bigint) ?? 0n;
 
   if (!r) return <main className="page"><p className="muted">Loading vault #{idParam}…</p></main>;
@@ -73,6 +73,7 @@ export default function VaultPage() {
               </div>
             ))}
             <div><dt>Base APY (everyone)</dt><dd>~2%</dd></div>
+            <div><dt>Leverage on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
             <div><dt>Total staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
             <div><dt>Strike</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
             <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
@@ -99,14 +100,14 @@ export default function VaultPage() {
               className="btn wide"
               disabled={busy}
               onClick={async () => {
-                await run([{ label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [id, address!] } }]);
+                await run([{ label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[id]] } }]);
                 refetch();
               }}
             >
-              {status ?? (prize > 0n ? `Claim ${fmtToken(prize)} ${TOKEN_SYMBOL} + stake` : "Unlock stake")}
+              {status ?? (prize > 0n ? `Claim ${fmtToken(stake + prize)} ${TOKEN_SYMBOL}` : `Claim ${fmtToken(stake)} ${TOKEN_SYMBOL}`)}
             </button>
           )}
-          {claimed && <p className="muted small">Claimed{prize > 0n ? `: +${fmtToken(prize)} ${TOKEN_SYMBOL}` : ""}.</p>}
+          {claimed && <p className="muted small">Claimed to your wallet{prize > 0n ? `, prize +${fmtToken(prize)} ${TOKEN_SYMBOL}` : ""}.</p>}
           {error && <div className="error small">{error}</div>}
 
           {r.phase === 4 && r.winners[0] !== "0x0000000000000000000000000000000000000000" && (

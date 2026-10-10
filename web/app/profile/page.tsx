@@ -1,15 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { parseUnits } from "viem";
+import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
-import VaultCard from "@/components/VaultCard";
-import { useBlock, useRounds } from "@/hooks/useRounds";
+import { statusText } from "@/components/VaultCard";
+import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL } from "@/lib/config";
-import { fmtToken, shortAddr } from "@/lib/format";
+import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL } from "@/lib/config";
+import { fmtToken, fmtYield, shortAddr } from "@/lib/format";
+
+type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
+
+/** Profit of the row: prize (if any) plus the base yield of the stake and prize. Deposit is never lost. */
+function Result({ x, me }: { x: Row; me?: string }) {
+  const place = x.r.winners.findIndex((w) => w.toLowerCase() === me?.toLowerCase());
+  if (x.prize > 0n)
+    return (
+      <span className="won">
+        +{fmtToken(x.prize + x.earned)} {TOKEN_SYMBOL} · {["1st", "2nd", "3rd"][place] ?? "won"}
+      </span>
+    );
+  const note = x.r.phase < 4 ? "so far" : x.r.thesisWon ? "not drawn · deposit safe" : "thesis lost · deposit safe";
+  return (
+    <span className="yield">
+      +{fmtYield(x.earned)} {TOKEN_SYMBOL} <span className="muted">yield · {note}</span>
+    </span>
+  );
+}
 
 export default function Profile() {
   const { authenticated, login } = usePrivy();
@@ -17,20 +36,30 @@ export default function Profile() {
   const { rounds } = useRounds();
   const block = useBlock();
   const { run, status, error, busy } = useTx();
-  const [amount, setAmount] = useState("");
+  const [tab, setTab] = useState<"active" | "history">("active");
+  const [rowBusy, setRowBusy] = useState<bigint>(); // round id, or -1n for "claim all"
 
   const { data: bal } = useReadContracts({
     allowFailure: false,
     contracts: [
       { address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address!] },
       { address: ROUNDS, abi: roundsAbi, functionName: "balanceWithYield", args: [address!] },
-      { address: ROUNDS, abi: roundsAbi, functionName: "freeBalanceOf", args: [address!] },
     ],
     query: { enabled: !!address, refetchInterval: 4000 },
   });
-  const { data: entries } = useReadContracts({
+  const { data: entries, refetch: refetchEntries } = useReadContracts({
     allowFailure: false,
     contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "entries", args: [r.id, address!] }) as const),
+    query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
+  });
+  const { data: prizes, refetch: refetchPrizes } = useReadContracts({
+    allowFailure: false,
+    contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "prizeOf", args: [r.id, address!] }) as const),
+    query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
+  });
+  const { data: earned } = useReadContracts({
+    allowFailure: false,
+    contracts: rounds.map((r) => ({ address: ROUNDS, abi: roundsAbi, functionName: "earnedOf", args: [r.id, address!] }) as const),
     query: { enabled: !!address && rounds.length > 0, refetchInterval: 4000 },
   });
 
@@ -42,39 +71,102 @@ export default function Profile() {
       </main>
     );
 
-  const [wallet, balance, free] = bal ?? [];
-  // Entered at least once (slot index > 0): shows active and finished vaults.
-  const mine = rounds.filter((_, i) => (entries?.[i]?.[0] ?? 0) > 0);
+  const [wallet, balance] = bal ?? [];
+  const rows: Row[] = rounds.flatMap((r, i) => {
+    const e = entries?.[i];
+    if (!e || e[0] === 0) return []; // never entered
+    return [{ r, stake: e[1], claimed: e[2], prize: prizes?.[i] ?? 0n, earned: earned?.[i] ?? 0n }];
+  });
+  const active = rows.filter((x) => x.stake > 0n && !x.claimed);
+  const history = rows.filter((x) => x.claimed || x.stake === 0n);
+  const claimable = active.filter((x) => x.r.phase === 4);
+  const shown = tab === "active" ? active : history;
 
-  async function withdraw() {
-    const amt = parseUnits(amount || "0", TOKEN_DECIMALS);
-    if (amt === 0n) return;
-    if (await run([{ label: "Withdrawing…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "withdraw", args: [amt] } }]))
-      setAmount("");
+  async function act(target: Row[], kind: "claim" | "exit") {
+    setRowBusy(target.length === 1 ? target[0].r.id : -1n);
+    // Claim is one transaction for any number of rounds; stake + prize + yield go to the wallet.
+    await run(
+      (kind === "claim"
+        ? [{ label: "Claiming…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [target.map((x) => x.r.id)] } }]
+        : [{ label: "Exiting…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "exitRound", args: [target[0].r.id] } }]
+      ) as Parameters<typeof run>[0],
+    );
+    setRowBusy(undefined);
+    refetchEntries();
+    refetchPrizes();
   }
 
   return (
     <main className="page">
-      <h1>Profile <span className="muted small mono">{shortAddr(address)}</span></h1>
+      <h1>
+        Profile <span className="muted small mono">{shortAddr(address)}</span>
+      </h1>
       <div className="panel balances">
         <dl className="stats">
-          <div><dt>In vaults (with yield)</dt><dd>{fmtToken(balance, 4)} {TOKEN_SYMBOL}</dd></div>
-          <div><dt>Free to withdraw</dt><dd>{fmtToken(free, 4)} {TOKEN_SYMBOL}</dd></div>
+          <div><dt>In vaults (stakes, prizes, yield)</dt><dd>{fmtToken(balance, 4)} {TOKEN_SYMBOL}</dd></div>
           <div><dt>Wallet</dt><dd>{fmtToken(wallet)} {TOKEN_SYMBOL}</dd></div>
         </dl>
-        <div className="row">
-          <input inputMode="decimal" placeholder={`Amount, ${TOKEN_SYMBOL}`} value={amount} onChange={(e) => setAmount(e.target.value.replace(",", "."))} />
-          <button className="btn ghost" onClick={() => free !== undefined && setAmount((Number(free) / 10 ** TOKEN_DECIMALS).toString())}>Max</button>
-          <button className="btn" onClick={withdraw} disabled={busy}>{status ?? "Withdraw"}</button>
-        </div>
         {error && <div className="error small">{error}</div>}
       </div>
 
-      <h2>My vaults</h2>
-      {mine.length === 0 && <p className="muted">You are not in any vault yet.</p>}
-      <div className="grid">
-        {mine.map((r) => <VaultCard key={r.id.toString()} r={r} block={block} />)}
+      <div className="tabs">
+        <button className={tab === "active" ? "active" : ""} onClick={() => setTab("active")}>
+          Active{active.length ? ` · ${active.length}` : ""}
+        </button>
+        <button className={tab === "history" ? "active" : ""} onClick={() => setTab("history")}>History</button>
+        {tab === "active" && claimable.length > 1 && (
+          <button className="btn small claim-all" disabled={busy} onClick={() => act(claimable, "claim")}>
+            {rowBusy === -1n && status ? status : `Claim all · ${claimable.length}`}
+          </button>
+        )}
       </div>
+
+      {shown.length === 0 ? (
+        <p className="muted">{tab === "active" ? "You are not in any vault right now." : "No history yet."}</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Vault</th>
+                <th>Status</th>
+                <th className="num">My stake</th>
+                <th className="num">Pool</th>
+                <th>Result</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((x) => (
+                <tr key={x.r.id.toString()}>
+                  <td>
+                    <Link href={`/vault/${x.r.id}`} className="vault-cell">
+                      <span className={x.r.thesis === 2 ? "tag bear" : "tag"}>{THESIS[x.r.thesis]}</span>
+                      {x.r.asset} <span className="muted">#{x.r.id.toString()}</span>
+                    </Link>
+                  </td>
+                  <td className="muted">{x.stake === 0n && !x.claimed ? "Exited" : statusText(x.r, block)}</td>
+                  <td className="num">{x.stake === 0n ? "—" : fmtToken(x.stake)}</td>
+                  <td className="num">{fmtToken(x.r.pool)}</td>
+                  <td><Result x={x} me={address} /></td>
+                  <td className="action">
+                    {x.r.phase === 4 && !x.claimed && x.stake > 0n && (
+                      <button className="btn small" disabled={busy} onClick={() => act([x], "claim")}>
+                        {rowBusy === x.r.id && status ? status : `Claim ${fmtToken(x.stake + x.prize)}`}
+                      </button>
+                    )}
+                    {x.r.phase === 1 && x.stake > 0n && (
+                      <button className="btn small ghost" disabled={busy} onClick={() => act([x], "exit")}>
+                        {rowBusy === x.r.id && status ? status : "Exit"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </main>
   );
 }

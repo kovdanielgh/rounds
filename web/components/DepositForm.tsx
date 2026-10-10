@@ -64,7 +64,7 @@ export default function DepositForm({ id }: { id: bigint }) {
         <button className="btn" onClick={submit} disabled={busy}>{status ?? "Deposit"}</button>
       </div>
       <div className="muted small">
-        Wallet {fmtToken(wallet)} {TOKEN_SYMBOL} · Free in vaults {fmtToken(free)} {TOKEN_SYMBOL}
+        Wallet {fmtToken(wallet)} {TOKEN_SYMBOL}{free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} unused in vaults` : ""}
       </div>
       {error && <div className="error small">{error}</div>}
     </div>

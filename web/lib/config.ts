@@ -7,7 +7,7 @@ export const PRICE_SOURCE = process.env.NEXT_PUBLIC_PRICE_SOURCE as `0x${string}
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "";
 
 export const TOKEN_DECIMALS = 6;
-export const TOKEN_SYMBOL = "AUSD";
+export const TOKEN_SYMBOL = "USD"; // AUSD on-chain, shown as USD
 export const BLOCK_SECONDS = 0.3; // measured on Monad testnet
 
 export const THESIS = ["None", "Bullish", "Bearish"] as const;
@@ -21,6 +21,10 @@ export const ASSETS: Record<string, { name: string; glyph: string; hue: number; 
   MON: { name: "Monad", glyph: "M", hue: 265, priceDecimals: 5 },
   NVDA: { name: "NVIDIA", glyph: "N", hue: 95, priceDecimals: 2 },
 };
+
+/** Engine leverage caps per market id (PerplEngine.setLeverage). Round leverage 0 = the cap. */
+export const LEVERAGE_CAP: Record<string, number> = { "16": 15, "32": 12, "48": 10, "64": 3 };
+export const leverageOf = (marketId: bigint, leverage: number) => leverage || LEVERAGE_CAP[marketId.toString()] || 0;
 
 export const assetMeta = (asset: string) =>
   ASSETS[asset] ?? { name: asset, glyph: asset.slice(0, 1), hue: 200, priceDecimals: 0 };

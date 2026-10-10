@@ -304,6 +304,27 @@ input:focus {
   background: rgba(182, 255, 26, 0.06);
 }
 
+.terms {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  align-items: center;
+  font-size: 13px;
+}
+
+.tabs .terms button {
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+}
+
+.tabs .terms button.active,
+.tabs .terms button:hover {
+  color: var(--text);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -369,7 +390,7 @@ input:focus {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin: 14px 0;
 }
@@ -396,6 +417,22 @@ input:focus {
   margin: 4px 0 0;
   font-family: var(--font-mono), monospace;
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Strike / price get their own row so changing numbers never change the card height */
+.stats .price-row {
+  grid-column: 1 / -1;
+}
+
+.status-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 4 px progress bar along the bottom edge of a card, bending up both corner arcs.
@@ -433,6 +470,182 @@ input:focus {
 .bar.bear > i {
   background-image: linear-gradient(90deg, var(--bear) 0%, var(--bear-hi) 50%, var(--bear) 100%);
 }
+
+/* ------------------------------------------------------------ grid cells: pop and glide */
+
+.cell {
+  position: relative;
+}
+
+.cell.span2 {
+  grid-column: span 2;
+}
+
+.cell.popping {
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cell.popping > .card {
+  animation: pop 0.55s cubic-bezier(.3, 1.4, .5, 1) forwards;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.06, 0.92); }
+  45% { transform: scale(0.94, 1.07); }
+  70% { transform: scale(1.14); opacity: 1; filter: brightness(1.4); }
+  100% { transform: scale(1.35); opacity: 0; filter: brightness(2) blur(6px); }
+}
+
+.droplets span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, var(--acid) 60%);
+  box-shadow: 0 0 8px var(--acid);
+  opacity: 0;
+  animation: droplet 0.5s 0.32s ease-out forwards;
+}
+
+.droplets.bear span {
+  background: radial-gradient(circle at 30% 30%, #fff, var(--bear) 60%);
+  box-shadow: 0 0 8px var(--bear);
+}
+
+@keyframes droplet {
+  0% { transform: rotate(var(--a)) translateX(0) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--d)) scale(0.3); opacity: 0; }
+}
+
+@media (max-width: 800px) {
+  .cell.span2 {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.popping > .card,
+  .droplets span {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Fully settled: greyed out, a bit of color back on hover */
+.card.done {
+  filter: grayscale(0.9) brightness(0.7); /* applied at once when the round settles */
+}
+
+.card.done:hover {
+  filter: grayscale(0.4) brightness(0.9);
+}
+
+/* Shake near the end of a phase (last 20 s, harder in the last 5 s) */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-1px, 1px) rotate(-0.3deg); }
+  40% { transform: translate(1px, -1px) rotate(0.3deg); }
+  60% { transform: translate(-1px, 0) rotate(0.2deg); }
+  80% { transform: translate(1px, 1px) rotate(-0.2deg); }
+}
+
+@keyframes shake-hard {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-3px, 2px) rotate(-0.8deg); }
+  40% { transform: translate(3px, -2px) rotate(0.8deg); }
+  60% { transform: translate(-2px, 1px) rotate(0.5deg); }
+  80% { transform: translate(2px, 2px) rotate(-0.5deg); }
+}
+
+.card.shake {
+  animation: shake 0.35s linear infinite;
+}
+
+.card.shake.hard {
+  animation: shake-hard 0.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.shake,
+  .card.shake.hard {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------ mirror card (Bullish / Bearish pair) */
+
+.mirror-art {
+  position: relative;
+}
+
+.half-link {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.half-link.left {
+  left: 0;
+}
+
+.half-link.right {
+  right: 0;
+}
+
+.card.mirror .card-title {
+  justify-content: center;
+}
+
+.card.mirror .card-body > .muted {
+  text-align: center;
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.side .btn {
+  width: 100%;
+}
+
+.btn.bear {
+  background: var(--bear);
+  border-color: var(--bear);
+  color: #12040a;
+}
+
+/* Halves of the bottom ring: both grow from the middle outward, shimmer mirrored. */
+.bar.half.left {
+  right: 50%;
+  border-right: 0;
+  border-radius: 0 0 0 var(--r);
+}
+
+.bar.half.right {
+  left: 50%;
+  border-left: 0;
+  border-radius: 0 0 var(--r) 0;
+}
+
+.bar.half.left > i {
+  left: auto;
+  right: 0;
+  animation-direction: reverse;
+}
+
+.bar.half.right > i {
+  left: 0;
+}
+
 
 /* ------------------------------------------------------------ vault page */
 
@@ -479,6 +692,84 @@ input:focus {
 
 .winners .me {
   color: var(--acid);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, var(--chrome-1), var(--chrome-2));
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: rgba(160, 190, 230, 0.04);
+}
+
+.table .num {
+  text-align: right;
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.table .action {
+  text-align: right;
+  width: 1%;
+}
+
+.vault-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lev {
+  margin-left: auto;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.yield {
+  font-family: var(--font-mono), monospace;
+}
+
+.won {
+  color: var(--acid);
+  font-family: var(--font-mono), monospace;
+}
+
+.claim-all {
+  margin-left: auto;
 }
 
 .balances {

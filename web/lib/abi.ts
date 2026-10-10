@@ -24,19 +24,14 @@ export const roundsAbi = [
     "name": "claim",
     "inputs": [
       {
-        "name": "id",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "user",
-        "type": "address",
-        "internalType": "address"
+        "name": "ids",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
     "outputs": [
       {
-        "name": "prize",
+        "name": "paid",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -95,6 +90,30 @@ export const roundsAbi = [
   },
   {
     "type": "function",
+    "name": "earnedOf",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "enter",
     "inputs": [
       {
@@ -141,6 +160,16 @@ export const roundsAbi = [
         "name": "claimed",
         "type": "bool",
         "internalType": "bool"
+      },
+      {
+        "name": "accAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "earned",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -290,6 +319,16 @@ export const roundsAbi = [
             "name": "start",
             "type": "uint64",
             "internalType": "uint64"
+          },
+          {
+            "name": "leverage",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "accAtDraw",
+            "type": "uint256",
+            "internalType": "uint256"
           }
         ]
       }
@@ -441,19 +480,6 @@ export const roundsAbi = [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "withdraw",
-    "inputs": [
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "error",
