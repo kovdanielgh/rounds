@@ -16,7 +16,7 @@ function Side({ r, label }: { r: RoundView; label: string }) {
         <div><dt>Prize pool</dt><dd><Pool r={r} /></dd></div>
         <div><dt>Staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
       </dl>
-      <Link href={`/vault/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
+      <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
         {r.phase === 1 ? `Go ${label}` : label}
       </Link>
     </div>
@@ -31,8 +31,8 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
       <div className="mirror-art">
         <MirrorArt asset={bull.asset} />
         {/* left half opens the bull side, right half the bear side */}
-        <Link href={`/vault/${bull.id}`} className="half-link left" aria-label={`Bulls · ${bull.asset}`} />
-        <Link href={`/vault/${bear.id}`} className="half-link right" aria-label={`Bears · ${bear.asset}`} />
+        <Link href={`/round/${bull.id}`} className="half-link left" aria-label={`Bulls · ${bull.asset}`} />
+        <Link href={`/round/${bear.id}`} className="half-link right" aria-label={`Bears · ${bear.asset}`} />
       </div>
       <div className="card-body">
         <div className="card-title">

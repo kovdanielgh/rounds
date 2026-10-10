@@ -34,7 +34,7 @@ export function statusText(r: RoundView, block?: bigint) {
 export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }) {
   const bear = r.thesis === 2;
   return (
-    <Link href={`/vault/${r.id}`} className={`card ${shakeOf(r, block)} ${r.phase === 4 ? "done" : ""}`}>
+    <Link href={`/round/${r.id}`} className={`card ${shakeOf(r, block)} ${r.phase === 4 ? "done" : ""}`}>
       <Art asset={r.asset} thesis={r.thesis} />
       <div className="card-body">
         <div className="card-title">

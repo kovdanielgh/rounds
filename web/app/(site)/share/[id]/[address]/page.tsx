@@ -28,7 +28,7 @@ export default async function SharePage({ params }: Props) {
       <p className="muted">Pick a side. If you are right, three players share the prize. If not, your money comes back.</p>
       <div className="row share-actions">
         <Link href="/" className="btn">Play a round</Link>
-        {d && <Link href={`/vault/${d.id}`} className="btn ghost">See round #{d.id}</Link>}
+        {d && <Link href={`/round/${d.id}`} className="btn ghost">See round #{d.id}</Link>}
       </div>
     </main>
   );

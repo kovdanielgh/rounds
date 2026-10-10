@@ -154,7 +154,7 @@ export default function Profile() {
               {shown.map((x) => (
                 <tr key={x.r.id.toString()}>
                   <td>
-                    <Link href={`/vault/${x.r.id}`} className="vault-cell">
+                    <Link href={`/round/${x.r.id}`} className="vault-cell">
                       <span className={x.r.thesis === 2 ? "tag bear" : "tag"}>{THESIS[x.r.thesis]}</span>
                       {x.r.asset} <span className="muted">#{x.r.id.toString()}</span>
                     </Link>

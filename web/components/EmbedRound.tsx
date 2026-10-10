@@ -52,7 +52,7 @@ export default function EmbedRound({ id, asset }: { id: string; asset?: string }
         </dl>
         {r.phase === 1 ? <DepositForm id={r.id} /> : <p className="muted small">Entry is closed. The next round opens soon.</p>}
         <p className="embed-promise">Your money always comes back.</p>
-        <a className="embed-powered" href={`https://saverounds.vercel.app/vault/${r.id}`} target="_blank" rel="noreferrer">
+        <a className="embed-powered" href={`https://saverounds.vercel.app/round/${r.id}`} target="_blank" rel="noreferrer">
           Powered by ROUNDS<span>·</span>
         </a>
       </div>

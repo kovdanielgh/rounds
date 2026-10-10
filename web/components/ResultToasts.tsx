@@ -78,7 +78,7 @@ export default function ResultToasts() {
             <strong>{prize > 0n ? `You won ${fmtToken(prize)} ${TOKEN_SYMBOL} 🎉` : `Your ${fmtToken(stake)} ${TOKEN_SYMBOL} is back`}</strong>
             <span className="muted small">{THESIS[r.thesis]} {r.asset} · Round #{r.id.toString()}</span>
           </div>
-          <Link href={`/vault/${r.id}`} className="btn small" onClick={() => dismiss(r.id)}>Claim</Link>
+          <Link href={`/round/${r.id}`} className="btn small" onClick={() => dismiss(r.id)}>Claim</Link>
           <button className="toast-x" onClick={() => dismiss(r.id)} aria-label="Dismiss">×</button>
         </div>
       ))}
