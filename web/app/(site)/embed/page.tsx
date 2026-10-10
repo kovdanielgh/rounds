@@ -20,7 +20,7 @@ export default function EmbedDemo() {
   return (
     <main className="page embed-demo">
       <section className="hero">
-        <h1>Add a no-loss round to any wallet</h1>
+        <h1>Add a round to any wallet</h1>
         <p className="muted">
           Wallets, exchanges and neobanks can give their users &quot;play the market, keep your money&quot; in 10 lines.
           The card below is live: it shows the current open round on Monad testnet.

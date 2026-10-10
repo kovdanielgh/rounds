@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
@@ -10,9 +10,20 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://saverounds.vercel.app"),
-  title: "Rounds",
-  description: "Play the market. Keep your money. No-loss savings rounds on Monad.",
+  // Pages set a short title ("Round #12", "Profile"); the template adds the brand.
+  title: { default: "Rounds · Play the market. Keep your money.", template: "%s · Rounds" },
+  description: "Pick Bulls or Bears. Only the yield trades on Perpl; your money always comes back. Testnet on Monad.",
+  applicationName: "Rounds",
+  openGraph: {
+    type: "website",
+    siteName: "Rounds",
+    title: "Rounds · Play the market. Keep your money.",
+    description: "Pick Bulls or Bears. Your money always comes back.",
+  },
+  twitter: { card: "summary_large_image" },
 };
+
+export const viewport: Viewport = { themeColor: "#06090f", colorScheme: "dark" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -27,7 +27,7 @@ function Result({ x, me }: { x: Row; me?: string }) {
     );
   return (
     <span className="yield">
-      <span className="muted">{x.r.phase < 4 ? "Yield so far" : "Deposit safe"} · </span>+{fmtYield(x.earned)}
+      <span className="muted">{x.r.phase < 4 ? "Yield so far" : "Money back"} · </span>+{fmtYield(x.earned)}
     </span>
   );
 }
@@ -69,7 +69,8 @@ export default function Profile() {
     return (
       <main className="page">
         <h1>Profile</h1>
-        <button className="btn" onClick={login}>Connect</button>
+        <p className="muted">Log in to see your rounds, prizes and money. Email works, no crypto needed.</p>
+        <button className="btn" onClick={login}>Log in</button>
       </main>
     );
 
@@ -105,7 +106,7 @@ export default function Profile() {
       </h1>
       <div className="panel balances">
         <dl className="stats">
-          <div><dt>In vaults (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
+          <div><dt>In Rounds (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
           <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
         </dl>
         <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
@@ -133,16 +134,18 @@ export default function Profile() {
           </table>
         </div>
       ) : shown.length === 0 ? (
-        <p className="muted">{tab === "active" ? "You are not in any vault right now." : "No history yet."}</p>
+        <p className="muted">
+          {tab === "active" ? <>You are not in any round right now. <Link href="/" className="link">Pick a round →</Link></> : "No history yet."}
+        </p>
       ) : (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Vault</th>
+                <th>Round</th>
                 <th>Status</th>
                 <th className="num">Stake</th>
-                <th className="num">Pool</th>
+                <th className="num">Prize pool</th>
                 <th>Result</th>
                 <th />
               </tr>

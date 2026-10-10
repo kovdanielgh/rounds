@@ -10,10 +10,10 @@ const BEAR = "#ff2e88";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; address: string }> }) {
   const { id, address } = await params;
   const d = await readShare(id, address);
-  const bull = d?.side !== "Bearish";
+  const bull = d?.side !== "Bears";
   const color = bull ? ACID : BEAR;
 
-  // Chart line: up for Bullish, down for Bearish, ends at a dot.
+  // Chart line: up for Bulls, down for Bears, ends at a dot.
   const pts: string[] = [];
   let y = bull ? 330 : 90;
   let seed = [...(d?.asset ?? "R")].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) + (bull ? 1 : 2);
@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
   const [ex, ey] = pts[pts.length - 1].split(",").map(Number);
 
-  const headline = !d ? "Play the market." : d.prize > 0 ? `I won ${usd(d.prize)} USD` : "No loss.";
+  const headline = !d ? "Play the market." : d.prize > 0 ? `I won ${usd(d.prize)} USD` : "Money back.";
   const sub = !d
     ? "Keep your money."
     : d.prize > 0

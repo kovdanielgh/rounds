@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import Confetti from "@/components/Confetti";
 import DepositForm from "@/components/DepositForm";
+import WhosIn from "@/components/WhosIn";
 import PriceChart, { chartCaption } from "@/components/PriceChart";
 import Pool, { payoutPool } from "@/components/Pool";
 import ProgressBar from "@/components/ProgressBar";
@@ -68,7 +71,7 @@ export default function VaultPage() {
           </div>
           <p className="muted">{statusText(r, block)}</p>
           <div className="promise">
-            <strong>Your deposit always comes back.</strong> Only the yield is at risk.
+            <strong>Your money always comes back.</strong> Only the yield of the round plays.
           </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
@@ -82,14 +85,15 @@ export default function VaultPage() {
           <p>{r.description || "—"}</p>
           <h2>Rules</h2>
           <p>{r.rules || "—"}</p>
+          <WhosIn r={r} />
           <p className="muted small">
-            Your deposit is never at risk: only the round budget trades. Stakes are locked from the moment the entry
-            window closes until the round settles.
+            Your money always comes back. Only the yield of the round trades on Perpl. Your stake is locked from the
+            moment entry closes until the round ends, then one click sends it back with any prize.
           </p>
         </section>
 
         <aside className="panel">
-          <h2>Profits</h2>
+          <h2>Prize</h2>
           <dl className="stats col">
             <div><dt>Prize pool{r.poolLive ? " · live estimate" : ""}</dt><dd><Pool r={r} /></dd></div>
             {SHARES.map((s, i) => (
@@ -98,15 +102,25 @@ export default function VaultPage() {
                 <dd>{fmtToken((prizePool * s) / 10000n)} {TOKEN_SYMBOL}</dd>
               </div>
             ))}
-            <div><dt>Base APY (everyone)</dt><dd>~2%</dd></div>
-            <div><dt>Leverage on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
-            <div><dt>Total staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
-            <div><dt>Strike</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
-            <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
             {stake > 0n && <div><dt>Your stake · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
+          {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
+          <details className="details">
+            <summary>Details</summary>
+            <dl className="stats col">
+              <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
+              <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
+              <div><dt>Leverage on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
+              <div><dt>Total staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
+              <div><dt>Base yield (everyone)</dt><dd>~2% a year</dd></div>
+              <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
+            </dl>
+          </details>
 
           {r.phase === 1 && <DepositForm id={r.id} />}
+          {r.phase !== 1 && stake === 0n && (
+            <Link href="/" className="btn wide">See open rounds</Link>
+          )}
 
           {r.phase === 1 && stake > 0n && (
             <button
@@ -117,10 +131,18 @@ export default function VaultPage() {
                 refetch();
               }}
             >
-              {status ?? "Exit vault"}
+              {status ?? "Exit round"}
             </button>
           )}
 
+          {r.phase === 4 && prize > 0n && (
+            <div className={`win-peak ${bear ? "bear" : ""}`}>
+              <Confetti id={`${r.id}-${address}`} bear={bear} />
+              <span className="muted small">You won</span>
+              <strong>{fmtToken(prize)} {TOKEN_SYMBOL}</strong>
+              <span className="muted small">and your {fmtToken(stake)} {TOKEN_SYMBOL} came back too.</span>
+            </div>
+          )}
           {r.phase === 4 && stake > 0n && prize === 0n && (
             <p className="soft-landing">
               Your {fmtToken(stake)} {TOKEN_SYMBOL} {claimed ? "came back" : "is back"}.{" "}
@@ -150,7 +172,7 @@ export default function VaultPage() {
                 text={
                   prize > 0n
                     ? `I won ${fmtToken(prize)} USD on Rounds and kept my deposit.`
-                    : `I played ${THESIS[r.thesis]} ${r.asset} on Rounds and kept my ${fmtToken(stake)} USD deposit.`
+                    : `I played ${r.asset} with the ${THESIS[r.thesis]} on Rounds and got my ${fmtToken(stake)} USD back.`
                 }
               />
             </div>

@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = d ? shareText(d) : "Rounds: play the market, keep your money";
   const image = `/share/${id}/${address}/image`;
   return {
-    title,
+    title: { absolute: title }, // a full sentence already: no "· Rounds" suffix
     description: "Pick a side on BTC. Your money always comes back.",
     openGraph: { title, images: [{ url: image, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", title, images: [image] },

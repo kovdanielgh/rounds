@@ -9,11 +9,11 @@ export default function Header() {
   const path = usePathname();
   return (
     <header className="header">
-      <Link href="/" className="logo">
+      <Link href="/" className="logo" aria-label="Rounds home">
         ROUNDS<span>·</span>
       </Link>
-      <nav>
-        <Link href="/" className={`navlink ${path === "/" ? "active" : ""}`}>Vaults</Link>
+      <nav aria-label="Main">
+        <Link href="/" className={`navlink ${path === "/" ? "active" : ""}`}>Rounds</Link>
         <Link href="/season" className={`navlink ${path === "/season" ? "active" : ""}`}>Season</Link>
         <Link href="/profile" className={`navlink ${path === "/profile" ? "active" : ""}`}>Profile</Link>
       </nav>
