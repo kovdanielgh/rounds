@@ -6,12 +6,13 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
 import PlayAgainButton from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
+import V1Balance from "@/components/V1Balance";
 import { Line, RowSkeleton } from "@/components/Skeletons";
 import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID, BLOCK_SECONDS } from "@/lib/config";
+import { DISCORD_URL, AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID, BLOCK_SECONDS } from "@/lib/config";
 import { fmtToken, fmtYield, shortAddr } from "@/lib/format";
 
 type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
@@ -152,6 +153,7 @@ export default function Profile() {
         <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
         {error && <div className="error small">{error}</div>}
       </div>
+      <V1Balance />
 
       <div className="tabs">
         <button className={tab === "active" ? "active" : ""} onClick={() => setTab("active")}>
@@ -227,6 +229,9 @@ export default function Profile() {
           </table>
         </div>
       )}
+      <p className="muted small community">
+        Questions or ideas? <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className="link">Join us on Discord →</a>
+      </p>
     </main>
   );
 }

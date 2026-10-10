@@ -41,7 +41,7 @@ Your yield plays, your money stays.
 | PoolTogether | deposit comes back | small prizes (about 2.5% a year), pure luck, no choice |
 | Premium Bonds (UK) | deposit comes back, state guarantee | UK only, no crypto, no choice of side |
 
-**Rounds:** the deposit comes back, the prize grows from a real position on Perpl, and the user picks a side. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 44 tests.
+**Rounds:** the deposit comes back, the prize grows from a real position on Perpl, and the user picks a side. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 49 tests.
 
 ## Why Monad
 
@@ -55,13 +55,15 @@ Your yield plays, your money stays.
 - Anyone can call `setStrike` and `settle`, but only in a 150-block window after the phase ends. After the window, only the owner can call them.
 - Pyth Entropy gives the random number for the draw.
 - User deposits never go to the trading engine. The maximum loss is the round budget.
-- 44 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
+- 49 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
 - All contracts are verified on MonadScan.
 
 ## What works today (Monad testnet)
 
 - Rounds open automatically: a quick SOL round every hour, a BTC Bulls vs Bears pair every 6 hours, daily ETH and MON rounds.
 - Each round opens a real 3x–15x position on Perpl when entry closes and closes it at settle.
+- **Rollover:** in the hourly SOL series a won prize pool is not drawn. It rolls into the next round and trades again on Perpl, up to 3 rounds in a row, then the big pool is drawn. Rarer, bigger prizes from the same yield.
+- **Jackpot of the week:** the pool grows by 50 USD after every week nobody wins.
 - One-click claim: deposit, prize and yield go straight to the wallet.
 - A live price chart with the strike, and a live prize pool that moves with the price.
 - Season 0 leaderboard. Share cards: the card reads the prize from the contract, so nobody can fake it.

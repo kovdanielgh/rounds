@@ -670,4 +670,94 @@ contract RoundsTest is Test {
         assertEq(uint8(b.thesis), uint8(Rounds.Thesis.Bearish));
         assertEq(b.leverage, 15);
     }
+
+    // ---------------------------------------------------------------- rollover
+
+    /// A round of a ride series. Like quick-sol: entry (40) is longer than the round (20), so the
+    /// next round, opened when this entry closes, is still open when this round settles.
+    function _rideRound() internal returns (uint256 id) {
+        id = _create(MON, 1, Rounds.Thesis.Bullish, 10e6, 40, 20);
+        _enter(alice, id, 100e6);
+    }
+
+    function test_ride_wonPotRollsIntoNext_noDraw() public {
+        uint256 a = _rideRound();
+        vm.roll(rounds.getRound(a).entryEnd);
+        uint256 b = _rideRound(); // opened while `a` is still in entry, like the scheduler
+        rounds.linkRide(a, b);
+        uint256 reservedBefore = rounds.reserved();
+
+        uint64 seq = _resolve(a, 2_100); // `b` is still open: its entry ends later
+        assertEq(seq, 0);
+        Rounds.Round memory ra = rounds.getRound(a);
+        assertEq(uint8(ra.status), uint8(Rounds.Status.Settled));
+        assertTrue(ra.thesisWon);
+        assertEq(ra.budget, 0);
+        assertEq(rounds.getRound(b).budget, 20e6);
+        assertEq(rounds.rolledIn(b), 10e6);
+        assertEq(rounds.rideLeg(b), 2);
+        assertEq(rounds.reserved(), reservedBefore);
+        // players of `a` get no prize; claim frees the stake (alice stays in `b` with 100)
+        assertEq(rounds.prizeOf(a, alice), 0);
+        _claim(alice, a);
+        assertEq(rounds.lockedOf(alice), 100e6);
+    }
+
+    function test_ride_lastLegIsDrawn() public {
+        rounds.setMaxRideLegs(2);
+        uint256 a = _rideRound();
+        vm.roll(rounds.getRound(a).entryEnd);
+        uint256 b = _rideRound();
+        rounds.linkRide(a, b);
+        _resolve(a, 2_100);
+        vm.roll(rounds.getRound(b).entryEnd);
+        uint256 c = _rideRound();
+        rounds.linkRide(b, c);
+
+        uint64 seq = _resolve(b, 2_100); // leg 2 of 2: drawn, not rolled
+        assertTrue(seq != 0);
+        entropy.fire(seq, keccak256("seed"));
+        assertEq(rounds.prizeOf(b, alice), 20e6); // alone: whole rolled pot
+        assertEq(rounds.getRound(c).budget, 10e6);
+        assertEq(rounds.rideLeg(c), 0);
+    }
+
+    function test_ride_lostPotGoesToTreasury_nextStaysFresh() public {
+        uint256 a = _rideRound();
+        vm.roll(rounds.getRound(a).entryEnd);
+        uint256 b = _rideRound();
+        rounds.linkRide(a, b);
+        uint256 t = rounds.treasury();
+        _resolve(a, 1_900);
+        assertEq(rounds.treasury(), t + 10e6);
+        assertEq(rounds.getRound(b).budget, 10e6);
+        assertEq(rounds.rolledIn(b), 0);
+    }
+
+    function test_ride_nextAlreadyStarted_drawsAsUsual() public {
+        uint256 a = _rideRound();
+        uint256 b = _rideRound(); // same blocks: `b` entry closes together with `a`
+        rounds.linkRide(a, b);
+        vm.roll(rounds.getRound(b).entryEnd + 1);
+        px.set(1, 2_000);
+        rounds.setStrike(b);
+        uint64 seq = _resolve(a, 2_100);
+        assertTrue(seq != 0);
+        assertEq(rounds.rolledIn(b), 0);
+    }
+
+    function test_ride_onlyOwnerLinks_onlyToOpenRound() public {
+        uint256 a = _rideRound();
+        uint256 b = _rideRound();
+        vm.prank(alice);
+        vm.expectRevert(Rounds.NotOwner.selector);
+        rounds.linkRide(a, b);
+        vm.expectRevert(Rounds.WrongPhase.selector);
+        rounds.linkRide(a, a);
+        vm.roll(rounds.getRound(b).entryEnd + 1);
+        px.set(1, 2_000);
+        rounds.setStrike(b);
+        vm.expectRevert(Rounds.WrongPhase.selector);
+        rounds.linkRide(a, b);
+    }
 }

@@ -12,11 +12,12 @@ import ProgressBar from "@/components/ProgressBar";
 import { CardSkeleton, Line } from "@/components/Skeletons";
 import PlayAgainButton, { nextRoundOf } from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
+import RolloverPill, { rolloverText } from "@/components/RolloverPill";
 import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
+import { isRollover, ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
@@ -68,8 +69,10 @@ export default function VaultPage() {
           <div className="card-title">
             <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
             <h1>{r.asset} · Round #{r.id.toString()}</h1>
+            <RolloverPill r={r} />
           </div>
           <p className="muted">{statusText(r, block)}</p>
+          {isRollover(r.description) && <p className="muted small">🔁 {rolloverText(r)}.</p>}
           <div className="promise">
             <strong>Your money always comes back.</strong> Only the yield of the round plays.
           </div>

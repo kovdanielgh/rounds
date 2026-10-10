@@ -1,5 +1,5 @@
 {
-  "_comment": "Each series keeps one open round (or pair). When its entry window closes, the scheduler opens the next one. Blocks: ~0.3 s on Monad testnet (1 h = 12000). Keep durationBlocks a bit below entryBlocks, so the previous position on the same market is closed before the next one opens. endAtUtc: the round always ends at this UTC time (Round of the day); entry is open until durationBlocks before it. endDow: day of week for endAtUtc (0 = Sunday). waitSettle: open the next round only after the previous one settled. jackpot: bonus starts at base, grows by step (up to max) after a round nobody won, resets after a win.",
+  "_comment": "Each series keeps one open round (or pair). When its entry window closes, the scheduler opens the next one. Blocks: ~0.3 s on Monad testnet (1 h = 12000). Keep durationBlocks a bit below entryBlocks, so the previous position on the same market is closed before the next one opens. endAtUtc: the round always ends at this UTC time (Round of the day); entry is open until durationBlocks before it. endDow: day of week for endAtUtc (0 = Sunday). waitSettle: open the next round only after the previous one settled. jackpot: bonus starts at base, grows by step (up to max) after a round nobody won, resets after a win. ride: rollover. If a round wins, its pot moves into the next round of the series instead of a draw; the contract draws after 3 pots in a row (maxRideLegs).",
   "series": [
     {
       "name": "round-of-the-day",
@@ -37,10 +37,11 @@
           "thesis": 1,
           "leverage": 10,
           "bonus": 5000000,
-          "description": "Quick round: SOL goes up in 15 minutes. The prize pool trades a 10x SOL long on Perpl.",
-          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. Your money always comes back."
+          "description": "Rollover: SOL goes up in 15 minutes. If it does, the prize pool rolls into the next round and trades again, up to 3 rounds in a row. Then the big pool is drawn.",
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Above strike wins. A win rolls the pool into the next round (rounds 1 and 2) or draws it (round 3). Your money always comes back."
         }
-      ]
+      ],
+      "ride": true
     },
     {
       "name": "btc-pair",

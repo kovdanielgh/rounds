@@ -2,7 +2,8 @@
 // Keeper: calls settleMany, then setStrikeMany, at the right block. It decides nothing: the contract
 //   reads the price on-chain. Keeper key first; if that fails (window passed), the owner key.
 // Scheduler: keeps one open round (or mirror pair) per series from ../scripts/series.json.
-// Env (../.env): MONAD_TESTNET_RPC, ROUNDS, KEEPER_PK, PRIVATE_KEY (owner).
+// Env (../.env): MONAD_TESTNET_RPC, ROUNDS, KEEPER_PK, PRIVATE_KEY (owner). SCHEDULER=0: keeper only
+// (an old Rounds contract that only finishes its rounds).
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,7 +19,9 @@ for (const line of readFileSync(join(root, ".env"), "utf8").split("\n")) {
 }
 const { MONAD_TESTNET_RPC: RPC, ROUNDS, KEEPER_PK, PRIVATE_KEY } = process.env;
 const CONFIG = join(root, "scripts/series.json");
-const STATE = join(root, "scripts/.series-state.json");
+// One state file per contract: round ids of an old contract mean nothing to a new one.
+const STATE = join(root, `scripts/.series-state.${ROUNDS.slice(2, 8).toLowerCase()}.json`);
+const SCHEDULER = process.env.SCHEDULER !== "0";
 const KEEPER_EVERY_MS = 3000;
 const DRY_RUN = process.env.DRY_RUN === "1"; // read and log only, send nothing
 const SCHEDULER_EVERY_MS = 30000;
@@ -32,6 +35,7 @@ const abi = [
     type: "function", name: "getRound", stateMutability: "view", inputs: [{ type: "uint256" }],
     outputs: [{ type: "tuple", components: parseTuple(roundTuple) }],
   },
+  { type: "function", name: "linkRide", stateMutability: "nonpayable", inputs: [{ type: "uint256" }, { type: "uint256" }], outputs: [] },
   { type: "function", name: "setStrikeMany", stateMutability: "nonpayable", inputs: [{ type: "uint256[]" }], outputs: [] },
   { type: "function", name: "settleMany", stateMutability: "payable", inputs: [{ type: "uint256[]" }], outputs: [] },
   {
@@ -177,6 +181,11 @@ async function schedulerTick() {
     const count = Number(await read("roundCount"));
     state[s.name] = count - s.rounds.length + 1;
     saveState(state);
+    // Rollover: if the previous round wins, its pot moves into this one (the contract decides at settle).
+    if (s.ride && id) {
+      for (let k = 0; k < s.rounds.length; k++) await send(owner, "linkRide", [BigInt(id + k), BigInt(state[s.name] + k)]);
+      log(`${s.name}: rollover ${id} -> ${state[s.name]}`);
+    }
     log(`${s.name}: opened round(s) ${state[s.name]}..${count}${bonus ? `, jackpot ${bonus / 1e6} USD each side` : ""}`);
   }
 }
@@ -195,6 +204,6 @@ function loop(name, fn, every) {
   run();
 }
 
-log(`bots for ${ROUNDS}, keeper ${keeper.account.address}${owner ? `, owner ${owner.account.address}` : ""}`);
+log(`bots for ${ROUNDS}${SCHEDULER ? "" : " (keeper only)"}, keeper ${keeper.account.address}${owner ? `, owner ${owner.account.address}` : ""}`);
 loop("keeper", keeperTick, KEEPER_EVERY_MS);
-loop("scheduler", schedulerTick, SCHEDULER_EVERY_MS);
+if (SCHEDULER) loop("scheduler", schedulerTick, SCHEDULER_EVERY_MS);

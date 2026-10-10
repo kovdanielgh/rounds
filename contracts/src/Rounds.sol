@@ -52,6 +52,11 @@ interface IPriceSource {
 ///   Closed  (entryEnd < block, not drawn)  stakes are locked, no enter, no exit
 ///   Drawing / Settled                      prizes are drawn, then claim frees stake + prize
 ///
+/// Rollover ("let it ride"): the owner can link a round to the next round of its series. If the
+/// linked round wins, there is no draw: the whole pot moves into the next round (before its entry
+/// closes) and trades again there. After maxRideLegs pots in a row the pot is drawn as usual. If a
+/// round with a rolled pot loses, the pot goes back to the treasury and the next pot starts fresh.
+///
 /// No trusted resolver: setStrike and settle read the price on-chain and anyone can call them, but
 /// only in a short window after entryEnd / end (so the caller cannot pick the moment). After the
 /// window only the owner can call them (fallback).
@@ -144,6 +149,11 @@ contract Rounds {
     mapping(uint256 => string) public rulesOf;
     mapping(uint64 => uint256) public roundOfSequence;
 
+    uint8 public maxRideLegs = 3;                      // a pot rolls over at most maxRideLegs - 1 times
+    mapping(uint256 => uint256) public rideNext;       // round => round that gets the pot if it wins (0 = draw)
+    mapping(uint256 => uint8) public rideLeg;          // 0 or 1 = fresh pot, n = pot that rolled over n - 1 times
+    mapping(uint256 => uint256) public rolledIn;       // pot received from the previous round
+
     mapping(address => uint256) public balanceOf; // deposit + won prizes
     mapping(address => uint256) public lockedOf;  // part of balance staked in unclaimed rounds
 
@@ -174,6 +184,8 @@ contract Rounds {
     event BudgetAdvanced(uint256 indexed id, uint256 advance);
     event FeeTaken(uint256 indexed id, uint256 fee);
     event FeesWithdrawn(address indexed to, uint256 amount);
+    event RideLinked(uint256 indexed id, uint256 indexed next);
+    event RolledOver(uint256 indexed from, uint256 indexed to, uint256 amount, uint8 leg);
 
     error NotOwner();
     error OutsideWindow();
@@ -256,6 +268,18 @@ contract Rounds {
         if (r.borrowed == 0) revert BadAmount();
         emit EngineReturned(id, r.borrowed, 0);
         r.borrowed = 0;
+    }
+
+    /// @notice Rollover: if round `id` wins, its pot goes to `next` instead of a draw. 0 unlinks.
+    function linkRide(uint256 id, uint256 next) external onlyOwner {
+        if (next != 0 && (next == id || rounds[next].status != Status.Open || rounds[next].strike != 0)) revert WrongPhase();
+        rideNext[id] = next;
+        emit RideLinked(id, next);
+    }
+
+    function setMaxRideLegs(uint8 legs) external onlyOwner {
+        if (legs == 0) revert BadAmount();
+        maxRideLegs = legs;
     }
 
     function setDefaults(uint64 entryBlocks_, uint64 durationBlocks_) external onlyOwner {
@@ -381,6 +405,12 @@ contract Rounds {
             reserved -= fee;
             fees += fee;
             emit FeeTaken(id, fee);
+        }
+
+        if (r.thesisWon && r.totalStake != 0 && r.budget != 0 && _rollOver(id, r)) {
+            r.status = Status.Settled;
+            emit Settled(id, finalPrice, true, r.winners);
+            return 0;
         }
 
         if (!r.thesisWon || r.totalStake == 0 || r.budget == 0) {
@@ -611,6 +641,23 @@ contract Rounds {
             vault.deposit(margin, address(this));
             emit EngineSkipped(id, margin);
         }
+    }
+
+    /// @dev Move a won pot into the linked next round if it can still take it. The pot stays in
+    /// `reserved`. Returns false (draw as usual) after maxRideLegs or if the next round has started.
+    function _rollOver(uint256 id, Round storage r) internal returns (bool) {
+        uint256 nextId = rideNext[id];
+        uint8 leg = rideLeg[id] == 0 ? 1 : rideLeg[id];
+        if (nextId == 0 || leg >= maxRideLegs) return false;
+        Round storage n = rounds[nextId];
+        if (n.status != Status.Open || n.strike != 0 || block.number > n.entryEnd) return false;
+        uint256 pot = r.budget;
+        r.budget = 0;
+        n.budget += pot;
+        rolledIn[nextId] += pot;
+        rideLeg[nextId] = leg + 1;
+        emit RolledOver(id, nextId, pot, leg + 1);
+        return true;
     }
 
     function _closePosition(uint256 id, Round storage r) internal {

@@ -146,7 +146,17 @@ export function useTx() {
         const prefix = steps.length > 1 ? `${i + 1}/${steps.length} · ` : "";
         setPhase("confirm");
         setStatus(`${prefix}Confirm in your wallet…`);
-        const hash = await writeContractAsync({ ...s.tx, ...(await feeFields(s.tx)) } as WriteArgs);
+        const send = async () => writeContractAsync({ ...s.tx, ...(await feeFields(s.tx)) } as WriteArgs);
+        let hash: `0x${string}`;
+        try {
+          hash = await send();
+        } catch (e) {
+          // Monad checks the balance a few blocks back: MON that just came from the faucet is not
+          // seen yet. Our own check (feeFields) passed, so wait a moment and try once more.
+          if (!/signer had insufficient balance/i.test(String((e as Error)?.message ?? e))) throw e;
+          await new Promise((r) => setTimeout(r, 2500));
+          hash = await send();
+        }
         setLastHash(hash);
         setPhase("sending");
         setStatus(`${prefix}${s.label || "Sending…"}`);

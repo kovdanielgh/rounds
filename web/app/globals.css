@@ -1848,3 +1848,30 @@ body {
 .modal .fb-nav .btn {
   margin-top: 8px;
 }
+
+.pill.ride {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--acid);
+  border: 1px solid rgba(182, 255, 26, 0.45);
+  background: rgba(182, 255, 26, 0.07);
+  white-space: nowrap;
+}
+
+.community {
+  margin-top: 32px;
+}
+
+.panel.v1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.panel.v1 p {
+  margin: 0;
+  flex: 1;
+}

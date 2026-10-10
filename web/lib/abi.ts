@@ -1,6 +1,10 @@
 // Generated from contracts/out (forge build). Only the parts the web app uses.
 
 export const roundsAbi = [
+  { "type": "function", "name": "withdraw", "stateMutability": "nonpayable", "inputs": [{ "name": "amount", "type": "uint256" }], "outputs": [] },
+  { "type": "function", "name": "rideLeg", "stateMutability": "view", "inputs": [{ "name": "", "type": "uint256" }], "outputs": [{ "name": "", "type": "uint8" }] },
+  { "type": "function", "name": "rolledIn", "stateMutability": "view", "inputs": [{ "name": "", "type": "uint256" }], "outputs": [{ "name": "", "type": "uint256" }] },
+  { "type": "function", "name": "maxRideLegs", "stateMutability": "view", "inputs": [], "outputs": [{ "name": "", "type": "uint8" }] },
   {
     "type": "function",
     "name": "balanceWithYield",

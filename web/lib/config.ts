@@ -18,6 +18,9 @@ export const ROUNDS = envAddress(process.env.NEXT_PUBLIC_ROUNDS);
 export const AUSD = envAddress(process.env.NEXT_PUBLIC_AUSD);
 export const PRICE_SOURCE = envAddress(process.env.NEXT_PUBLIC_PRICE_SOURCE);
 export const ENGINE = envAddress(process.env.NEXT_PUBLIC_ENGINE);
+/** The first Rounds contract (before rollover). Players can still take their money out of it. */
+export const ROUNDS_V1 = envAddress(process.env.NEXT_PUBLIC_ROUNDS_V1 || "0xF265552D95De56AecdC1711966f2C17f89965bd0");
+export const DISCORD_URL = "https://discord.gg/6CRpryYeU";
 /** Our own wallets, marked "team" on the Season page (honest stats). */
 export const TEAM = (process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe")
   .toLowerCase()
@@ -59,4 +62,7 @@ export const isRoundOfDay = (description: string) => description.startsWith("Rou
 
 /** Jackpot rounds: long rounds with a big prize that grows when nobody wins (scheduler: jackpot). */
 export const isJackpot = (description: string) => description.startsWith("Jackpot");
+/** Rollover series: a won pool moves into the next round, drawn after MAX_RIDE_LEGS pools in a row. */
+export const isRollover = (description: string) => description.startsWith("Rollover");
+export const MAX_RIDE_LEGS = 3;
 

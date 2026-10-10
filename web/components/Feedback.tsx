@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
+import { DISCORD_URL } from "@/lib/config";
 
 /** The window opens by itself after the 1st and the 5th deposit. The button opens it any time. */
 const ASK_AT = [1, 5];
@@ -80,7 +81,6 @@ export default function Feedback() {
     }).catch(() => null);
     if (!res?.ok) return setState("failed");
     setState("sent");
-    setTimeout(() => setOpen(false), 1500);
   }
 
   /** A choice moves on by itself; a text field has Next (or Send on the last question). */
@@ -105,7 +105,13 @@ export default function Feedback() {
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="fb-title" onClick={(e) => e.stopPropagation()}>
             <button className="toast-x modal-x" aria-label="Close" onClick={() => setOpen(false)}>×</button>
             {state === "sent" ? (
-              <h2 id="fb-title">Thank you! 🙌</h2>
+              <>
+                <h2 id="fb-title">Thank you! 🙌</h2>
+                <p className="muted small">
+                  Want to talk to us or see what we build next?{" "}
+                  <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className="link">Join our Discord →</a>
+                </p>
+              </>
             ) : (
               <>
                 <h2 id="fb-title" className="fb-q">{cur.q}</h2>

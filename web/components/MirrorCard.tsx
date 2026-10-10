@@ -3,6 +3,7 @@
 import Link from "next/link";
 import MirrorArt from "./MirrorArt";
 import Pool from "./Pool";
+import RolloverPill from "./RolloverPill";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
 import { TOKEN_SYMBOL, leverageOf, riskOf, isRoundOfDay, isJackpot } from "@/lib/config";
@@ -45,6 +46,7 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
         <div className="pills">
           {isRoundOfDay(bull.description) && <span className="pill day">☀ Round of the day</span>}
           {isJackpot(bull.description) && <span className="pill jackpot">🏆 Jackpot · grows every week nobody wins</span>}
+          <RolloverPill r={bull} />
           <span className="lev" title={`${leverageOf(bull.marketId, bull.leverage)}x on Perpl`}>{riskOf(leverageOf(bull.marketId, bull.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(bull, block)}</div>

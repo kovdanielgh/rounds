@@ -10,7 +10,7 @@ import {PerplPriceSource, IPerplExchange} from "../src/PerplPriceSource.sol";
 import {PerplEngine, IPerplDex, IERC20Min} from "../src/PerplEngine.sol";
 
 /// forge script script/Deploy.s.sol --rpc-url monad_testnet --broadcast
-/// Env: PRIVATE_KEY, optional TOKEN, VAULT, VAULT_APR_BPS, ENTROPY, PERPL_EXCHANGE, ENGINE,
+/// Env: PRIVATE_KEY, optional TOKEN, VAULT, PRICES, VAULT_APR_BPS, ENTROPY, PERPL_EXCHANGE, ENGINE,
 /// ENTRY_BLOCKS, DURATION_BLOCKS, PERPL_ENGINE (true: deploy PerplEngine, token must be AUSD),
 /// ENGINE_BUFFER (AUSD for the Perpl account, default 100e6).
 contract Deploy is Script {
@@ -31,9 +31,10 @@ contract Deploy is Script {
         if (vault == address(0)) {
             vault = address(new MockYieldVault(IERC20Like(token), vm.envOr("VAULT_APR_BPS", uint256(430))));
         }
-        PerplPriceSource prices = new PerplPriceSource(IPerplExchange(perpl));
+        address prices = vm.envOr("PRICES", address(0)); // reuse a deployed PerplPriceSource
+        if (prices == address(0)) prices = address(new PerplPriceSource(IPerplExchange(perpl)));
         Rounds rounds = new Rounds(
-            IERC20(token), IERC4626(vault), IEntropyV2(entropy), IPriceSource(address(prices)), entryBlocks, durationBlocks
+            IERC20(token), IERC4626(vault), IEntropyV2(entropy), IPriceSource(prices), entryBlocks, durationBlocks
         );
         if (engine == address(0) && vm.envOr("PERPL_ENGINE", false)) {
             PerplEngine pe = new PerplEngine(IPerplDex(perpl), IERC20Min(token), address(rounds));
@@ -52,7 +53,7 @@ contract Deploy is Script {
 
         console.log("token ", token);
         console.log("vault ", vault);
-        console.log("prices", address(prices));
+        console.log("prices", prices);
         console.log("rounds", address(rounds));
         console.log("engine", engine);
     }

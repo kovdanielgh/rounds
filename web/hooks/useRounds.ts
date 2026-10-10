@@ -29,6 +29,8 @@ export type RoundView = {
   winners: readonly `0x${string}`[];
   description: string;
   rules: string;
+  rideLeg: number; // rollover: 0 or 1 = fresh pool, n = the pool rolled over n - 1 times
+  rolledIn: bigint; // pool received from the previous round
   price?: bigint; // live on-chain price
   ended?: boolean; // the end block has passed (settle may still be pending)
 };
@@ -68,13 +70,16 @@ export function useRounds() {
       { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "phase", args: [id] } as const,
       { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "descriptionOf", args: [id] } as const,
       { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "rulesOf", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "rideLeg", args: [id] } as const,
+      { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "rolledIn", args: [id] } as const,
     ]),
     query: { enabled: n > 0, refetchInterval: 3000 },
   });
 
+  const K = 6; // reads per round
   const base = ids.map((id, i) => {
     if (!data) return undefined;
-    const r = data[i * 4] as {
+    const r = data[i * K] as {
       asset: `0x${string}`; marketId: bigint; thesis: number; status: number; thesisWon: boolean;
       entryEnd: bigint; end: bigint; count: number; budget: bigint; borrowed: bigint; strike: bigint;
       finalPrice: bigint; totalStake: bigint; winners: readonly `0x${string}`[]; funded: bigint; start: bigint;
@@ -85,7 +90,7 @@ export function useRounds() {
       asset: assetLabel(r.asset),
       marketId: r.marketId,
       thesis: r.thesis,
-      phase: Number(data[i * 4 + 1]),
+      phase: Number(data[i * K + 1]),
       thesisWon: r.thesisWon,
       start: r.start,
       entryEnd: r.entryEnd,
@@ -102,8 +107,10 @@ export function useRounds() {
       count: r.count,
       leverage: r.leverage,
       winners: r.winners,
-      description: data[i * 4 + 2] as string,
-      rules: data[i * 4 + 3] as string,
+      description: data[i * K + 2] as string,
+      rules: data[i * K + 3] as string,
+      rideLeg: Number(data[i * K + 4]),
+      rolledIn: data[i * K + 5] as bigint,
     } satisfies RoundView;
   });
   const rounds = base.filter(Boolean) as RoundView[];
