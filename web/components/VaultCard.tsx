@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import RolloverPill from "./RolloverPill";
+import RolloverCorner from "./RolloverCorner";
 import Art from "./Art";
 import Pool from "./Pool";
 import ProgressBar from "./ProgressBar";
@@ -40,11 +40,12 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
   return (
     <Link href={`/round/${r.id}`} className={`card ${shakeOf(r, block)} ${r.phase === 4 ? "done" : ""}`}>
       <Art asset={r.asset} thesis={r.thesis} />
+      <RolloverCorner r={r} />
       <div className="card-body">
         <div className="card-title">
           <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
           <h3>{r.asset}</h3>
-          {isRoundOfDay(r.description) && <span className="pill day">☀ Round of the day</span>}{isJackpot(r.description) && <span className="pill jackpot">🏆 Jackpot</span>}<RolloverPill r={r} />
+          {isRoundOfDay(r.description) && <span className="pill day">☀ Round of the day</span>}{isJackpot(r.description) && <span className="pill jackpot">🏆 Jackpot</span>}
           <span className="lev" title={`${leverageOf(r.marketId, r.leverage)}x on Perpl`}>{riskOf(leverageOf(r.marketId, r.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(r, block)}</div>

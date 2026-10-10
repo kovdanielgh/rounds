@@ -44,6 +44,22 @@
       "ride": true
     },
     {
+      "name": "quick-zec",
+      "entryBlocks": 12000,
+      "durationBlocks": 3000,
+      "rounds": [
+        {
+          "asset": "ZEC",
+          "marketId": 256,
+          "thesis": 2,
+          "leverage": 5,
+          "bonus": 5000000,
+          "description": "Quick round: ZEC goes down in 15 minutes. The prize pool trades a 5x ZEC short on Perpl.",
+          "rules": "Strike: Perpl price when entry closes. Final: price at the end. Below strike wins. Your money always comes back."
+        }
+      ]
+    },
+    {
       "name": "btc-pair",
       "entryBlocks": 72000,
       "durationBlocks": 70000,

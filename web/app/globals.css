@@ -1849,14 +1849,29 @@ body {
   margin-top: 8px;
 }
 
-.pill.ride {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: var(--acid);
-  border: 1px solid rgba(182, 255, 26, 0.45);
-  background: rgba(182, 255, 26, 0.07);
-  white-space: nowrap;
+/* Rollover: a corner in the side color, top right of the card, with a black loop icon. */
+.ride-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  border-top-right-radius: var(--radius);
+  background: var(--acid);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  color: #000;
+  pointer-events: auto;
+}
+
+.ride-corner.bear {
+  background: var(--bear);
+}
+
+.ride-corner svg {
+  position: absolute;
+  top: 6px;
+  right: 6px;
 }
 
 .community {

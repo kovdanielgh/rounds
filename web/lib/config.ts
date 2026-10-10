@@ -45,11 +45,12 @@ export const ASSETS: Record<string, { name: string; glyph: string; hue: number; 
   ETH: { name: "Ether", glyph: "Ξ", hue: 230, priceDecimals: 2 },
   SOL: { name: "Solana", glyph: "◎", hue: 280, priceDecimals: 2 },
   MON: { name: "Monad", glyph: "M", hue: 265, priceDecimals: 5 },
+  ZEC: { name: "Zcash", glyph: "ⓩ", hue: 45, priceDecimals: 3 },
   NVDA: { name: "NVIDIA", glyph: "N", hue: 95, priceDecimals: 2 },
 };
 
 /** Engine leverage caps per market id (PerplEngine.setLeverage). Round leverage 0 = the cap. */
-export const LEVERAGE_CAP: Record<string, number> = { "16": 15, "32": 12, "48": 10, "64": 3 };
+export const LEVERAGE_CAP: Record<string, number> = { "16": 15, "32": 12, "48": 10, "64": 3, "256": 5 };
 export const leverageOf = (marketId: bigint, leverage: number) => leverage || LEVERAGE_CAP[marketId.toString()] || 0;
 /** Risk in one word for cards (leverage stays in details): 10x and more is a Moonshot. */
 export const riskOf = (lev: number) => (lev >= 10 ? "Moonshot" : "Steady");

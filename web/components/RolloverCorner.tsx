@@ -10,12 +10,18 @@ export function rolloverText(r: RoundView) {
   return "A win rolls the pool into the next round, up to 3 in a row";
 }
 
-export default function RolloverPill({ r }: { r: RoundView }) {
+/** Rollover mark: a corner in the side color (top right of a card) with a black loop icon. */
+export default function RolloverCorner({ r }: { r: RoundView }) {
   if (!isRollover(r.description)) return null;
   const leg = Math.max(1, r.rideLeg);
   return (
-    <span className="pill ride" title={rolloverText(r)}>
-      Rollover{leg > 1 ? ` ${leg}/${MAX_RIDE_LEGS} · +${fmtToken(r.rolledIn)} ${TOKEN_SYMBOL}` : ""}
+    <span className={`ride-corner ${r.thesis === 2 ? "bear" : ""}`} title={`Rollover${leg > 1 ? ` ${leg}/${MAX_RIDE_LEGS}` : ""}: ${rolloverText(r)}`} aria-label="Rollover round">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="m17 2 4 4-4 4" />
+        <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+        <path d="m7 22-4-4 4-4" />
+        <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+      </svg>
     </span>
   );
 }
