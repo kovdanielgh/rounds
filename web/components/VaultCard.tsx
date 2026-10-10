@@ -12,7 +12,16 @@ export function statusText(r: RoundView, block?: bigint) {
   const left = (to: bigint) => (block && to > block ? fmtDuration(Number(to - block) * BLOCK_SECONDS) : "now");
   if (r.phase === 1) return `Open · closes in ${left(r.entryEnd)}`;
   // The end block only allows settle; the round closes when the settle transaction lands.
-  if (r.phase === 2) return block && block >= r.end ? "Settling…" : `Live · ends in ${left(r.end)}`;
+  if (r.phase === 2) {
+    if (block && block >= r.end) return "Settling…";
+    // "Live · BTC +0.12% · Bulls winning · 4m left"
+    if (r.strike && r.price) {
+      const d = (Number(r.price) - Number(r.strike)) / Number(r.strike);
+      const pct = `${d >= 0 ? "+" : "−"}${Math.abs(d * 100).toFixed(2)}%`;
+      return `Live · ${r.asset} ${pct} · ${d >= 0 ? "Bulls" : "Bears"} winning · ${left(r.end)} left`;
+    }
+    return `Live · ends in ${left(r.end)}`;
+  }
   if (r.phase === 3) return "Drawing winners";
   return r.thesisWon ? "Settled · thesis won" : "Settled · thesis lost";
 }

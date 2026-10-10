@@ -7,6 +7,7 @@ import PriceChart, { chartCaption } from "@/components/PriceChart";
 import Pool, { payoutPool } from "@/components/Pool";
 import ProgressBar from "@/components/ProgressBar";
 import { CardSkeleton, Line } from "@/components/Skeletons";
+import PlayAgainButton, { nextRoundOf } from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
 import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
@@ -53,7 +54,9 @@ export default function VaultPage() {
     );
   const prizePool = payoutPool(r, feeBps ?? 300n);
   const bear = r.thesis === 2;
-  const chance = r.totalStake > 0n && stake > 0n ? Number((stake * 10000n) / r.totalStake) / 100 : 0;
+  // Chance as a frequency ("1 in 8"): easier to feel than a percent.
+  const chanceIn = r.totalStake > 0n && stake > 0n ? Math.max(1, Math.round(Number(r.totalStake) / Number(stake))) : 0;
+  const next = nextRoundOf(r, rounds);
 
   return (
     <main className="page vault">
@@ -100,7 +103,7 @@ export default function VaultPage() {
             <div><dt>Total staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
             <div><dt>Strike</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
             <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
-            {stake > 0n && <div><dt>Your stake · chance</dt><dd>{fmtToken(stake)} · {chance}%</dd></div>}
+            {stake > 0n && <div><dt>Your stake · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
 
           {r.phase === 1 && <DepositForm id={r.id} />}
@@ -118,6 +121,15 @@ export default function VaultPage() {
             </button>
           )}
 
+          {r.phase === 4 && stake > 0n && prize === 0n && (
+            <p className="soft-landing">
+              Your {fmtToken(stake)} {TOKEN_SYMBOL} {claimed ? "came back" : "is back"}.{" "}
+              {next ? `Next round in ${statusText(next, block).replace("Open · closes in ", "")}.` : "A new round opens soon."}
+            </p>
+          )}
+          {r.phase === 4 && stake > 0n && !claimed && (
+            <PlayAgainButton r={r} stake={stake} rounds={rounds} onDone={() => refetch()} />
+          )}
           {r.phase === 4 && stake > 0n && !claimed && (
             <button
               className="btn wide"

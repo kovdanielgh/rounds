@@ -1,6 +1,8 @@
 # Rounds
 
-**Save in dollars. Pick a side on BTC. Your deposit always comes back.**
+**Play the market. Keep your money.**
+
+Pick a side on BTC. Your yield plays, your money stays.
 
 Rounds runs short rounds on Monad. Your deposit earns yield. The yield of the round trades your idea on Perpl, an on-chain order book. If the idea is correct, three depositors share the prize. If it is wrong, you lose nothing: you get your deposit back, plus base yield.
 

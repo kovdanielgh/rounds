@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { parseUnits } from "viem";
+import { maxUint256, parseUnits } from "viem";
 import { useAccount, useReadContracts } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
@@ -41,14 +41,17 @@ export default function DepositForm({ id }: { id: bigint }) {
       free >= amt
         ? [{ label: "Entering…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "enter", args: [id, amt] } }]
         : [
+            // One-time permission for USD: every later deposit is a single signature.
             ...(allowance < amt
-              ? [{ label: "Approving…", tx: { address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, amt] } }]
+              ? [{ label: "Enabling USD (once)…", tx: { address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
               : []),
             { label: "Depositing…", tx: { address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [id, amt] } },
           ];
     if (await run(steps as Parameters<typeof run>[0])) {
       setAmount("");
       refetch();
+      // Ask once, so the result can reach the player when the tab is in the background.
+      if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
     }
   }
 
@@ -66,6 +69,7 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="muted small">
         Wallet {fmtToken(wallet)} {TOKEN_SYMBOL}{free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} unused in vaults` : ""}
       </div>
+      <div className="promise-line small">Your money always comes back.</div>
       {error && <div className="error small">{error}</div>}
     </div>
   );

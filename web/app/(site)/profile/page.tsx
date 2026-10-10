@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
+import PlayAgainButton from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
 import { Line, RowSkeleton } from "@/components/Skeletons";
 import { statusText } from "@/components/VaultCard";
@@ -107,6 +108,7 @@ export default function Profile() {
           <div><dt>In vaults (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
           <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
         </dl>
+        <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
         {error && <div className="error small">{error}</div>}
       </div>
 
@@ -163,6 +165,9 @@ export default function Profile() {
                       <button className="btn small" disabled={busy} onClick={() => act([x], "claim")}>
                         {rowBusy === x.r.id && status ? status : `Claim ${fmtToken(x.stake + x.prize)}`}
                       </button>
+                    )}
+                    {x.r.phase === 4 && !x.claimed && x.stake > 0n && (
+                      <PlayAgainButton small r={x.r} stake={x.stake} rounds={rounds} onDone={() => { refetchEntries(); refetchPrizes(); }} />
                     )}
                     {x.prize > 0n && (x.claimed || x.r.phase === 4) && (
                       <ShareButton small id={x.r.id} text={`I won ${fmtToken(x.prize)} USD on Rounds and kept my deposit.`} />
