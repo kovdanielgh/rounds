@@ -805,6 +805,41 @@ input:focus {
 
 /* ------------------------------------------------------------ stats, how it works, promise */
 
+.how-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 14px 0 0;
+  color: var(--text);
+}
+
+.how-line b {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(182, 255, 26, 0.5);
+  color: var(--acid);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.how-arrow {
+  color: var(--muted);
+}
+
+.stats-line {
+  margin: 14px 0 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .stats-bar {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

@@ -6,15 +6,10 @@ import HowItWorks from "@/components/HowItWorks";
 import { CardSkeleton } from "@/components/Skeletons";
 import StatsBar from "@/components/StatsBar";
 import VaultCard from "@/components/VaultCard";
-import { groupMirrors, useBlock, useRounds, type Item, type RoundView } from "@/hooks/useRounds";
+import { groupMirrors, useBlock, useRounds, type Item } from "@/hooks/useRounds";
 import { useFlip } from "@/hooks/useFlip";
 import { usePopList } from "@/hooks/usePopList";
-import { BLOCK_SECONDS } from "@/lib/config";
 
-// Round length buckets, by blocks from creation to end.
-const TERMS = { all: Infinity, day: 86_400, week: 604_800, month: 2_592_000 } as const;
-type Term = keyof typeof TERMS;
-const lengthSeconds = (r: RoundView) => Number(r.end - r.start) * BLOCK_SECONDS;
 
 const itemKey = (it: Item) => (it.kind === "mirror" ? `m${it.bull.id}` : `r${it.r.id}`);
 
@@ -31,41 +26,29 @@ function Droplets({ bear }: { bear: boolean }) {
 
 export default function Home() {
   const [tab, setTab] = useState<"open" | "closed">("open");
-  const [term, setTerm] = useState<Term>("all");
   const { rounds, ready } = useRounds();
   const block = useBlock();
   const shown = groupMirrors(
-    rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1) && lengthSeconds(r) <= TERMS[term]),
+    rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1)),
   );
   // Cards that leave (entry window closed) pop like bubbles; the rest glide to their new place.
   // Mirror pairs first: they take a full row, so the grid of single cards below has no holes.
   const ordered = [...shown.filter((it) => it.kind === "mirror"), ...shown.filter((it) => it.kind === "single")];
-  const list = usePopList(ordered, itemKey, `${tab}:${term}`);
+  const list = usePopList(ordered, itemKey, tab);
   const grid = useFlip<HTMLDivElement>();
 
   return (
     <main className="page">
       <section className="hero">
-        <h1>Save. Pick a thesis. Never lose the deposit.</h1>
-        <p className="muted">
-          Your deposit earns yield. The yield of each round trades the thesis on Perpl. If the thesis wins, three
-          depositors share the prize: 80% · 15% · 5%.
-        </p>
+        <h1>Play the market. Keep your money.</h1>
+        <HowItWorks />
+        <StatsBar rounds={rounds} ready={ready} />
       </section>
-      <StatsBar rounds={rounds} ready={ready} />
-      <HowItWorks />
       <div className="tabs">
-        <button className={tab === "open" ? "active" : ""} onClick={() => setTab("open")}>Open vaults</button>
-        <button className={tab === "closed" ? "active" : ""} onClick={() => setTab("closed")}>Closed vaults</button>
-        <div className="terms">
-          {(Object.keys(TERMS) as Term[]).map((t) => (
-            <button key={t} className={`navlink ${term === t ? "active" : ""}`} onClick={() => setTerm(t)}>
-              {t === "all" ? "All" : `≤ 1 ${t}`}
-            </button>
-          ))}
-        </div>
+        <button className={tab === "open" ? "active" : ""} onClick={() => setTab("open")}>Open rounds</button>
+        <button className={tab === "closed" ? "active" : ""} onClick={() => setTab("closed")}>Closed rounds</button>
       </div>
-      {ready && shown.length === 0 && <p className="muted">No {tab} vaults right now.</p>}
+      {ready && shown.length === 0 && <p className="muted">No {tab} rounds right now. A new one opens soon.</p>}
       {!ready && (
         <div className="grid">
           {[0, 1, 2].map((i) => <CardSkeleton key={i} />)}
