@@ -23,7 +23,12 @@ export default function WinnersFeed({ rounds, block }: { rounds: RoundView[]; bl
     )
     .filter((x) => x.place === 0 || x.prize >= 1_000_000n) // keep the line short: 1st places and wins of 1 USD or more
     .slice(0, 10);
-  if (!wins.length) return null;
+  // Wrong calls too: "being wrong cost nothing" is the point. Same line, sorted by time.
+  const wrong = rounds
+    .filter((r) => r.phase === 4 && !r.thesisWon && r.totalStake > 0n)
+    .sort((a, b) => Number(b.end - a.end))
+    .slice(0, 4);
+  if (!wins.length && !wrong.length) return null;
   const ago = (r: RoundView) => (block && block > r.end ? `${fmtDuration(Number(block - r.end) * BLOCK_SECONDS)} ago` : "just now");
   const items = wins.map(({ r, w, prize }) => (
     <Link key={`${r.id}-${w}`} href={`/round/${r.id}`} className="win-item">
@@ -37,14 +42,21 @@ export default function WinnersFeed({ rounds, block }: { rounds: RoundView[]; bl
       </span>
     </Link>
   ));
+  const wrongItems = wrong.map((r) => (
+    <Link key={`w${r.id}`} href={`/round/${r.id}`} className="win-item">
+      Wrong call on {r.asset} · <b>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</b> went back{" "}
+      <span className="muted">· {ago(r)}</span>
+    </Link>
+  ));
+  const all = [...items, ...wrongItems];
   return (
-    <div className="winners-feed" aria-label="Recent wins">
-      <span className="winners-label">Recent wins</span>
+    <div className="winners-feed" aria-label="Latest rounds">
+      <span className="winners-label">Latest rounds</span>
       <div className="winners-track">
         <div className="winners-row">
-          {items}
+          {all}
           {/* second copy for a seamless loop */}
-          <span aria-hidden className="winners-copy">{items}</span>
+          <span aria-hidden className="winners-copy">{all}</span>
         </div>
       </div>
     </div>

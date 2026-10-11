@@ -16,7 +16,7 @@ export default function MoneyBoxes({ amount, prize }: { amount?: bigint; prize?:
       <div className="money-box pool">
         <span className="money-label">Prize pool{prize !== undefined ? ` · ${fmtToken(prize)} ${TOKEN_SYMBOL}` : ""}</span>
         <strong>Paid by Rounds</strong>
-        <span className="muted small">Right call: 3 players split it.</span>
+        <span className="muted small">Right call: 3 players split it. Testnet: we pay to learn what you like.</span>
       </div>
     </div>
   );

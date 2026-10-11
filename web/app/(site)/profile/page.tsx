@@ -6,6 +6,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContracts } from "wagmi";
 import PlayAgainButton from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
+import { useDisplayName } from "@/components/ConnectButton";
+import CopyAddress from "@/components/CopyAddress";
 import V1Balance from "@/components/V1Balance";
 import { Line, RowSkeleton } from "@/components/Skeletons";
 import { statusText } from "@/components/VaultCard";
@@ -13,7 +15,7 @@ import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
 import { DISCORD_URL, AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID, BLOCK_SECONDS } from "@/lib/config";
-import { fmtToken, fmtYield, shortAddr } from "@/lib/format";
+import { fmtToken, fmtYield } from "@/lib/format";
 
 type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
 
@@ -63,7 +65,8 @@ function Result({ x, me }: { x: Row; me?: string }) {
 }
 
 export default function Profile() {
-  const { authenticated, login } = usePrivy();
+  const { authenticated, login, logout } = usePrivy();
+  const name = useDisplayName();
   const { address } = useAccount();
   const { rounds, ready } = useRounds();
   const block = useBlock();
@@ -133,7 +136,7 @@ export default function Profile() {
   return (
     <main className="page">
       <h1>
-        Profile <span className="muted small mono">{shortAddr(address)}</span>
+        Profile <CopyAddress address={address} />
       </h1>
       <div className="panel balances">
         <dl className="stats">
@@ -227,6 +230,9 @@ export default function Profile() {
         </div>
       )}
       <p className="muted small community">
+        {name} · <button className="link-button" onClick={logout}>Log out</button>
+      </p>
+      <p className="muted small">
         Questions or ideas? <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" className="link">Join us on Discord →</a>
       </p>
     </main>

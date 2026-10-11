@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useSeason } from "@/hooks/useSeason";
 import { RowSkeleton } from "@/components/Skeletons";
-import { TEAM, TOKEN_SYMBOL } from "@/lib/config";
+import { ROUNDS, TEAM, TOKEN_SYMBOL, addressUrl } from "@/lib/config";
 import { fmtToken, shortAddr } from "@/lib/format";
 
 /** Season 0: how much money people kept safe and how much they won. Nothing else. */
@@ -14,6 +14,7 @@ export default function Season() {
   const { address } = useAccount();
   const { players, totalPrizes, totalKept, biggestWin, isLoading } = useSeason(rounds, block);
   const me = address?.toLowerCase();
+  const played = rounds.filter((r) => r.phase === 4 && r.count > 0).length;
 
   return (
     <main className="page">
@@ -27,6 +28,11 @@ export default function Season() {
           <div><dt>Won</dt><dd>{fmtToken(totalPrizes)} {TOKEN_SYMBOL}</dd></div>
           <div><dt>Biggest win</dt><dd>{biggestWin > 0n ? `${fmtToken(biggestWin)} ${TOKEN_SYMBOL}` : "—"}</dd></div>
         </dl>
+        {/* Credible, and anyone can check it: every deposit came back, including wrong calls. */}
+        <p className="proof-line">
+          {played} rounds finished. Deposits lost: 0.{" "}
+          <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Check every claim on MonadScan ↗</a>
+        </p>
       </div>
 
       {(!ready || isLoading) && (

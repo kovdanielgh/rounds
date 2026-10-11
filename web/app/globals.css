@@ -2052,3 +2052,82 @@ body {
     margin: 0 0 8px;
   }
 }
+
+/* Made to Stick: the worst case as a story, the test you can run, the call to prove it */
+.wrong-story {
+  margin: 4px 0 12px;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.why-free {
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.try-it {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+
+.proof-line {
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+/* The account in the header is a link now: same look as before, no underline. */
+a.connect.account {
+  display: inline-flex;
+  align-items: center;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--acid);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Profile: short address next to the title, one click copies the full one */
+.copy-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--chrome-2);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.copy-address:hover {
+  color: var(--text);
+  border-color: rgba(160, 190, 230, 0.3);
+}
+
+.copy-icon {
+  color: var(--acid);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

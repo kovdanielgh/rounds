@@ -14,8 +14,8 @@ function Side({ r, label }: { r: RoundView; label: string }) {
   return (
     <div className={`side ${bear ? "bear" : ""}`}>
       <dl className="stats col">
-        <div><dt>Prize · by Rounds</dt><dd><Pool r={r} /></dd></div>
-        <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
+        <div><dt>Prize</dt><dd><Pool r={r} /></dd></div>
+        {r.totalStake > 0n && <div><dt>Everyone put in</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>}
       </dl>
       <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
         {r.phase === 1 ? `Go ${label}` : label}
@@ -38,10 +38,7 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
       </div>
       <div className="card-body">
         <div className="card-title">
-          <span className="tag">Bulls</span>
-          <h3>{bull.asset}</h3>
-          <span className="tag bear">Bears</span>
-
+          <h3>{bull.asset}: up or down?</h3>
         </div>
         {/* Pills on their own row: the title stays centered on every screen. */}
         <div className="pills">

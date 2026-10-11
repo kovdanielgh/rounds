@@ -19,7 +19,6 @@ function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
   return (
     <div className="money-path small">
       <MoneyBoxes amount={amount} prize={prize} />
-      <p className="muted">Not sure? Put in 10 {TOKEN_SYMBOL} and exit before entry closes: it comes straight back.</p>
       <p className="muted trust">
         Test money only ·{" "}
         <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>
@@ -177,6 +176,7 @@ export default function DepositForm({ id }: { id: bigint }) {
               onChange={(e) => setAmount(e.target.value.replace(",", "."))}
             />
           </div>
+          <p className="try-it">Don&apos;t trust us. Put in 10, press Exit, watch it come back.</p>
           <button className="btn wide" onClick={submit} disabled={busy || amt === 0n || tooMuch} /* not blocked while the balance loads: the wallet checks it too */>
             {label}
           </button>

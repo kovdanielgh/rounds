@@ -28,23 +28,21 @@ export default function WhosIn({ r }: { r: RoundView }) {
   const me = address?.toLowerCase();
   const bear = r.thesis === 2;
 
+  if (players.length === 0) return null; // "Be the first" already sits next to the prize
+
   return (
     <div className="whos-in">
       <h2>Who&apos;s in · {players.length}</h2>
-      {players.length === 0 ? (
-        <p className="muted small">Nobody yet. Be the first player of this round.</p>
-      ) : (
-        <ul>
-          {players.slice(0, 12).map((p) => (
-            <li key={p.u} className={`${bear ? "bear" : ""} ${p.u.toLowerCase() === me ? "me" : ""}`}>
-              <span className="dot" />
-              <span className="mono">{p.u.toLowerCase() === me ? "you" : shortAddr(p.u)}</span>
-              <span className="mono muted">{fmtToken(p.stake)} {TOKEN_SYMBOL}</span>
-            </li>
-          ))}
-          {players.length > 12 && <li className="muted small">+{players.length - 12} more</li>}
-        </ul>
-      )}
+      <ul>
+        {players.slice(0, 12).map((p) => (
+          <li key={p.u} className={`${bear ? "bear" : ""} ${p.u.toLowerCase() === me ? "me" : ""}`}>
+            <span className="dot" />
+            <span className="mono">{p.u.toLowerCase() === me ? "you" : shortAddr(p.u)}</span>
+            <span className="mono muted">{fmtToken(p.stake)} {TOKEN_SYMBOL}</span>
+          </li>
+        ))}
+        {players.length > 12 && <li className="muted small">+{players.length - 12} more</li>}
+      </ul>
     </div>
   );
 }

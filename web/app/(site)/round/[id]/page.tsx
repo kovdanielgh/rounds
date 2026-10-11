@@ -13,13 +13,22 @@ import { CardSkeleton, Line } from "@/components/Skeletons";
 import PlayAgainButton, { nextRoundOf } from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
 import { statusText } from "@/components/VaultCard";
-import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
+import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { isRollover, ROUNDS, THESIS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
+
+/** A settled round that nobody won: what happened, in one honest story. */
+function wrongStory(r: RoundView) {
+  if (r.totalStake === 0n) return "Nobody played this round.";
+  const move = r.strike && r.finalPrice ? (Number(r.finalPrice) - Number(r.strike)) / Number(r.strike) : 0;
+  const how = move === 0 ? "did not move" : `went ${move > 0 ? "up" : "down"} ${Math.abs(move * 100).toFixed(2)}%`;
+  const who = r.count === 1 ? "The player's" : "The players'";
+  return `The call was wrong: ${r.asset} ${how}. ${who} ${fmtToken(r.totalStake)} ${TOKEN_SYMBOL} went straight back. Being wrong cost nothing.`;
+}
 
 export default function VaultPage() {
   const { id: idParam } = useParams<{ id: string }>();
@@ -65,14 +74,8 @@ export default function VaultPage() {
     <main className="page vault">
       <div className="vault-grid">
         <section>
-          <div className="card-title">
-            <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
-            <h1>{r.asset} · Round #{r.id.toString()}</h1>
-          </div>
-          <p className="muted">{statusText(r, block)}</p>
-          <div className="promise">
-            <strong>Your deposit never trades.</strong> The prize pool is paid by Rounds.
-          </div>
+          <h1>{r.asset} goes {bear ? "down" : "up"}?</h1>
+          <p className="muted">Round #{r.id.toString()} · {statusText(r, block)}</p>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
           </p>
@@ -94,22 +97,15 @@ export default function VaultPage() {
           <h2>Prize</h2>
           <dl className="stats col">
             <div><dt>Total{r.poolLive ? " · live" : ""}</dt><dd><Pool r={r} /></dd></div>
-            <div><dt>Everyone put in{r.totalStake > 0n ? ` · ${r.count} ${r.count === 1 ? "player" : "players"}` : ""}</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {/* Settled and nobody's side won: no places to show. */}
-            {!(r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")) &&
-              SHARES.map((s, i) => (
-                <div key={i}>
-                  <dt>{["1st", "2nd", "3rd"][i]} place</dt>
-                  <dd>{fmtToken((prizePool * s) / 10000n)} {TOKEN_SYMBOL}</dd>
-                </div>
-              ))}
+            {!(r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")) && (
+              <div><dt>1st · 2nd · 3rd</dt><dd>{SHARES.map((s) => fmtToken((prizePool * s) / 10000n)).join(" · ")} {TOKEN_SYMBOL}</dd></div>
+            )}
+            <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {stake > 0n && <div><dt>You put in · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
-          <p className="muted small prize-how">
-            {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")
-              ? "Nobody won this round. Everyone got their own money back."
-              : `Paid by Rounds${isRollover(r.description) ? ", plus pools rolled in from earlier rounds" : ""}. Right call: 3 players split it. Everyone gets their deposit back.`}
-          </p>
+          {/* The worst case, told as a story: the call was wrong and it cost nothing. */}
+          {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0") && <p className="prize-how wrong-story">{wrongStory(r)}</p>}
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
           <details className="details">
             <summary>Details</summary>
@@ -117,7 +113,6 @@ export default function VaultPage() {
               <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
               <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
               <div><dt>Prize trade on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
-              <div><dt>Base yield (everyone)</dt><dd>~2% a year</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>
             <p className="small">
@@ -182,7 +177,7 @@ export default function VaultPage() {
                 text={
                   prize > 0n
                     ? `I won ${fmtToken(prize)} USD on Rounds and kept my deposit.`
-                    : `I played ${r.asset} with the ${THESIS[r.thesis]} on Rounds and got my ${fmtToken(stake)} USD back.`
+                    : `I was wrong about ${r.asset} and still got my ${fmtToken(stake)} USD back. Rounds.`
                 }
               />
             </div>
