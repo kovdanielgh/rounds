@@ -2130,3 +2130,24 @@ a.connect.account {
   font-size: 14px;
   color: var(--text);
 }
+
+/* Mirror pair on a phone: two narrow columns. Label above the number, numbers may wrap, nothing spills out. */
+.sides > .side {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .sides {
+    gap: 12px;
+  }
+
+  .card.mirror .stats.col > div {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .card.mirror .stats dd {
+    margin: 0;
+    white-space: normal;
+  }
+}

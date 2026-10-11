@@ -2,10 +2,10 @@ import { assetMeta } from "@/lib/config";
 
 /** Art for a Bullish/Bearish pair: one logo, the bull line rises into the middle and the bear line
  *  continues from the same point down to the right, so the two charts meet and read as one. */
-export default function MirrorArt({ asset }: { asset: string }) {
+export default function MirrorArt({ asset, wide }: { asset: string; wide?: boolean }) {
   const meta = assetMeta(asset);
   const id = `mirror-${asset}`;
-  const W = 800;
+  const W = wide ? 1400 : 800; // wide: the same height on a full-row card, so the pair is lower, not cropped
   const H = 220;
   const peak: [number, number] = [W / 2, 58];
 

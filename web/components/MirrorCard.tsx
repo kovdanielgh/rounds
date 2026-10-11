@@ -31,7 +31,7 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
     <div className={`card mirror ${shakeOf(bull, block)} ${bull.phase === 4 && bear.phase === 4 ? "done" : ""}`}>
       <RolloverCorner r={bull} />
       <div className="mirror-art">
-        <MirrorArt asset={bull.asset} />
+        <MirrorArt asset={bull.asset} wide />
         {/* left half opens the bull side, right half the bear side */}
         <Link href={`/round/${bull.id}`} className="half-link left" aria-label={`${bull.asset} up`} />
         <Link href={`/round/${bear.id}`} className="half-link right" aria-label={`${bear.asset} down`} />

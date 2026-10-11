@@ -14,41 +14,12 @@ import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { DISCORD_URL, AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID, BLOCK_SECONDS } from "@/lib/config";
+import { DISCORD_URL, AUSD, ROUNDS, THESIS, TOKEN_SYMBOL, CHAIN_ID } from "@/lib/config";
 import { fmtToken, fmtYield } from "@/lib/format";
 
 type Row = { r: RoundView; stake: bigint; claimed: boolean; prize: bigint; earned: bigint };
 
 /** Profit of the row: prize (if any) plus the base yield of the stake and prize. Deposit is never lost. */
-/**
- * Days in a row (UTC) with at least one round, counted to today or yesterday, and the best run.
- * No pressure: missing a day just starts a new count.
- */
-function streakOf(rows: Row[], block?: bigint) {
-  const now = Math.floor(Date.now() / 1000);
-  const days = new Set(
-    rows.map((x) => {
-      const ago = block && block > x.r.entryEnd ? Number(block - x.r.entryEnd) * BLOCK_SECONDS : 0;
-      return Math.floor((now - ago) / 86_400);
-    }),
-  );
-  const today = Math.floor(now / 86_400);
-  let d = days.has(today) ? today : today - 1;
-  let current = 0;
-  while (days.has(d)) {
-    current++;
-    d--;
-  }
-  let best = 0;
-  for (const day of days) {
-    if (days.has(day - 1)) continue; // start of a run
-    let n = 0;
-    while (days.has(day + n)) n++;
-    best = Math.max(best, n);
-  }
-  return { current, best, playedToday: days.has(today) };
-}
-
 function Result({ x, me }: { x: Row; me?: string }) {
   const place = x.r.winners.findIndex((w) => w.toLowerCase() === me?.toLowerCase());
   if (x.prize > 0n)
@@ -118,8 +89,7 @@ export default function Profile() {
   const history = rows.filter((x) => x.claimed || x.stake === 0n);
   const claimable = active.filter((x) => x.r.phase === 4);
   const played = rows.filter((x) => x.stake > 0n || x.claimed);
-  const streak = streakOf(played, block);
-  // The call record is the main number: being right is the skill. The day streak stays small.
+  // The call record is the main number: being right is the skill.
   const calls = played.filter((x) => x.r.phase === 4);
   const right = calls.filter((x) => x.r.thesisWon).length;
   const shown = tab === "active" ? active : history;
@@ -151,7 +121,6 @@ export default function Profile() {
             <dt>Your calls</dt>
             <dd>
               {calls.length > 0 ? `${right} right of ${calls.length}` : "—"}
-              {streak.current > 0 && <span className="muted small"> · {streak.current} day{streak.current > 1 ? "s" : ""} in a row</span>}
             </dd>
           </div>
         </dl>
