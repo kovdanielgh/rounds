@@ -4,6 +4,7 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/
 docs/hackathon-plan.md
+docs/book-review.md
 .series-state
 .series-state.json
 node_modules/

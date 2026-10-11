@@ -9,16 +9,17 @@ export default function Header() {
   const path = usePathname();
   return (
     <header className="header">
-      <Link href="/" className="logo" aria-label="Rounds home">
-        ROUNDS<span>·</span>
-      </Link>
-      <nav aria-label="Main">
-        <Link href="/" className={`navlink ${path === "/" ? "active" : ""}`}>Rounds</Link>
-        <Link href="/season" className={`navlink ${path === "/season" ? "active" : ""}`}>Season</Link>
-        <Link href="/profile" className={`navlink ${path === "/profile" ? "active" : ""}`}>Profile</Link>
-      </nav>
-      <FaucetButton />
-      <ConnectButton />
+      {/* Same width as the page: the menu lines up with the content, the button with its right edge.
+          No logo: "Rounds" is the first menu item. */}
+      <div className="header-in">
+        <nav aria-label="Main">
+          <Link href="/" className={`navlink ${path === "/" ? "active" : ""}`}>Rounds</Link>
+          <Link href="/season" className={`navlink ${path === "/season" ? "active" : ""}`}>Season</Link>
+          <Link href="/profile" className={`navlink ${path === "/profile" ? "active" : ""}`}>Profile</Link>
+        </nav>
+        <FaucetButton />
+        <ConnectButton />
+      </div>
     </header>
   );
 }

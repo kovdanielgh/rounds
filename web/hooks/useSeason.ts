@@ -10,7 +10,8 @@ export type Player = {
   rounds: number;
   wins: number;
   prizes: bigint;
-  staked: bigint;
+  best: bigint; // biggest single prize
+  staked: bigint; // money put into rounds, all of it came back or will
   streak: number; // days in a row (UTC) with at least one round, up to today or yesterday
   lastDay: number;
 };
@@ -54,13 +55,14 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
       const prize = info[i * 2 + 1] as bigint;
       if (stake === 0n) return; // exited before the window closed
       const p = byUser.get(user) ?? {
-        address: user, rounds: 0, wins: 0, prizes: 0n, staked: 0n, streak: 0, lastDay: 0, days: new Set<number>(),
+        address: user, rounds: 0, wins: 0, prizes: 0n, best: 0n, staked: 0n, streak: 0, lastDay: 0, days: new Set<number>(),
       };
       p.rounds += 1;
       p.staked += stake;
       if (prize > 0n) {
         p.wins += 1;
         p.prizes += prize;
+        if (prize > p.best) p.best = prize;
       }
       p.days.add(dayOf(r));
       byUser.set(user, p);
@@ -77,12 +79,14 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
     }
     return { ...p, streak, lastDay: Math.max(...days) };
   });
-  players.sort((a, b) => (b.prizes > a.prizes ? 1 : b.prizes < a.prizes ? -1 : b.rounds - a.rounds));
+  // Most kept safe first: the mission is to keep and grow people's money, not to rank luck.
+  players.sort((a, b) => (b.staked > a.staked ? 1 : b.staked < a.staked ? -1 : b.prizes > a.prizes ? 1 : b.prizes < a.prizes ? -1 : 0));
 
   return {
     players,
     totalPrizes: players.reduce((s, p) => s + p.prizes, 0n),
-    totalRounds: rounds.filter((r) => r.phase === 4).length,
+    totalKept: players.reduce((s, p) => s + p.staked, 0n),
+    biggestWin: players.reduce((m, p) => (p.best > m ? p.best : m), 0n),
     isLoading: isLoading && pairs.length > 0,
   };
 }

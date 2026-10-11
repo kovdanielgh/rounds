@@ -147,9 +147,6 @@ export default function Profile() {
             </dd>
           </div>
         </dl>
-        {streak.current > 0 && !streak.playedToday && (
-          <p className="muted small">Play a round today to make it {streak.current + 1} days. No rush: a new run can start any day.</p>
-        )}
         <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
         {error && <div className="error small">{error}</div>}
       </div>

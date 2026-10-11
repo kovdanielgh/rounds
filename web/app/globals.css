@@ -115,19 +115,7 @@ p {
   border-bottom: 1px solid var(--line);
 }
 
-.logo {
-  font-family: var(--font-mono), monospace;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  background: linear-gradient(180deg, #f4f9ff, #7f97b8 55%, #c9d8ec);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
 
-.logo span {
-  color: var(--acid);
-}
 
 .header nav {
   display: flex;
@@ -1508,11 +1496,6 @@ body {
     padding: 0 0 0 16px;
   }
 
-  .logo {
-    grid-area: logo;
-    align-self: center;
-    letter-spacing: 0.12em;
-  }
 
   .connect {
     grid-area: connect;
@@ -2002,5 +1985,70 @@ body {
 @media (max-width: 560px) {
   .money-boxes {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---- header: full-width bar, content as wide as the page (overrides the rules above) ---- */
+.header {
+  display: block;
+  height: auto;
+  padding: 0;
+}
+
+.header-in {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  max-width: 1180px;
+  height: 60px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.connect {
+  align-self: center;
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+}
+
+.connect.account {
+  padding: 0;
+}
+
+@media (max-width: 800px) {
+  .header-in {
+    gap: 16px;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    display: block;
+    padding: 0;
+  }
+
+  .header-in {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "nav connect"
+      "faucet faucet";
+    gap: 0 12px;
+    height: auto;
+    min-height: 56px;
+  }
+
+  .connect {
+    min-height: 0;
+    height: 34px;
+    padding: 0 14px;
+  }
+
+  .faucet {
+    justify-self: start;
+    margin: 0 0 8px;
   }
 }
