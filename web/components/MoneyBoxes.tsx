@@ -10,12 +10,12 @@ export default function MoneyBoxes({ amount, prize }: { amount?: bigint; prize?:
     <div className="money-boxes">
       <div className="money-box safe">
         <span className="money-label">Your deposit{amount ? ` · ${fmtToken(amount)} ${TOKEN_SYMBOL}` : ""}</span>
-        <strong>Locked, never traded</strong>
+        <strong>Safe, never traded</strong>
         <span className="muted small">Comes back to your wallet when the round ends.</span>
       </div>
       <div className="money-box pool">
         <span className="money-label">Prize pool{prize !== undefined ? ` · ${fmtToken(prize)} ${TOKEN_SYMBOL}` : ""}</span>
-        <strong>Paid by Rounds, trades on Perpl</strong>
+        <strong>Paid by Rounds</strong>
         <span className="muted small">Right call: 3 players split it.</span>
       </div>
     </div>

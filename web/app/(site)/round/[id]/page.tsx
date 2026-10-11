@@ -71,7 +71,7 @@ export default function VaultPage() {
           </div>
           <p className="muted">{statusText(r, block)}</p>
           <div className="promise">
-            <strong>Your deposit never trades.</strong> Only the prize pool, paid by Rounds, trades on Perpl.
+            <strong>Your deposit never trades.</strong> The prize pool is paid by Rounds.
           </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
@@ -94,7 +94,7 @@ export default function VaultPage() {
           <h2>Prize</h2>
           <dl className="stats col">
             <div><dt>Total{r.poolLive ? " · live" : ""}</dt><dd><Pool r={r} /></dd></div>
-            <div><dt>Everyone put in · {r.count} {r.count === 1 ? "player" : "players"}</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
+            <div><dt>Everyone put in{r.totalStake > 0n ? ` · ${r.count} ${r.count === 1 ? "player" : "players"}` : ""}</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {/* Settled and nobody's side won: no places to show. */}
             {!(r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")) &&
               SHARES.map((s, i) => (
@@ -108,7 +108,7 @@ export default function VaultPage() {
           <p className="muted small prize-how">
             {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")
               ? "Nobody won this round. Everyone got their own money back."
-              : `Paid by Rounds${isRollover(r.description) ? ", plus pools rolled in from earlier rounds" : ""}. Later also the interest on all deposits. The pool trades on Perpl, so it grows or shrinks with the price. Right call: 3 players split it. Everyone gets their deposit back.`}
+              : `Paid by Rounds${isRollover(r.description) ? ", plus pools rolled in from earlier rounds" : ""}. Right call: 3 players split it. Everyone gets their deposit back.`}
           </p>
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
           <details className="details">
@@ -116,7 +116,7 @@ export default function VaultPage() {
             <dl className="stats col">
               <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
               <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
-              <div><dt>Leverage on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
+              <div><dt>Prize trade on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
               <div><dt>Base yield (everyone)</dt><dd>~2% a year</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>

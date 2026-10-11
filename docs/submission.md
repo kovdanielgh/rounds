@@ -2,9 +2,9 @@
 
 **Premium Bonds meets Polymarket, on Monad's on-chain order book.**
 
-Play the market. Keep your money.
+Call the market. Your deposit never trades.
 
-**Short description (one line):** Rounds is a no-loss market on Monad: you pick a side on BTC, the yield of your deposit trades it on Perpl, and your deposit always comes back.
+**Short description (one line):** Rounds is a no-loss up/down market on Monad: you pick up or down on BTC, only a prize pool trades on Perpl, and your deposit always comes back.
 
 Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/sava · Network: Monad testnet · Demo video: _add link_
 
@@ -23,11 +23,11 @@ Prize-linked savings tried to join the two. PoolTogether gives the deposit back,
 Rounds is a no-loss round on Monad.
 
 1. **You deposit dollars and pick a side**, for example Bulls or Bears on BTC.
-2. **The yield trades, your deposit does not.** When the entry window closes, the treasury advances the yield that the stakes will earn during the round. The contract trades only this yield on Perpl, an on-chain order book on Monad, with up to 15x leverage.
+2. **Only the prize pool trades, your deposit does not.** On testnet Rounds pays the pool. On mainnet the pool is the interest that all deposits earn during the round: the treasury advances it when the entry window closes. The contract trades only the pool on Perpl, an on-chain order book on Monad, with up to 15x leverage.
 3. **If your side is right, three depositors win the result:** 80%, 15% and 5%. Pyth Entropy draws them, weighted by stake.
 4. **Your deposit always comes back**, plus base yield of about 2% a year.
 
-Your yield plays, your money stays.
+Your deposit never trades. Only the prize pool does.
 
 ## Category and alternatives
 

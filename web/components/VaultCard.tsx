@@ -6,7 +6,7 @@ import Art from "./Art";
 import Pool from "./Pool";
 import ProgressBar from "./ProgressBar";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { TOKEN_SYMBOL, BLOCK_SECONDS, THESIS, leverageOf, riskOf, isRoundOfDay, isJackpot, isRollover } from "@/lib/config";
+import { TOKEN_SYMBOL, BLOCK_SECONDS, THESIS, isRoundOfDay, isJackpot, isRollover } from "@/lib/config";
 import { fmtDuration, fmtToken } from "@/lib/format";
 
 export function statusText(r: RoundView, block?: bigint) {
@@ -46,7 +46,6 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
           <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
           <h3>{r.asset}</h3>
           {isRoundOfDay(r.description) && <span className="pill day">☀ Round of the day</span>}{isJackpot(r.description) && <span className="pill jackpot">🏆 Jackpot</span>}
-          <span className="lev" title={`${leverageOf(r.marketId, r.leverage)}x on Perpl`}>{riskOf(leverageOf(r.marketId, r.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(r, block)}</div>
         <dl className="stats">
@@ -56,7 +55,7 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
           </div>
           <div>
             <dt>Everyone put in</dt>
-            <dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd>
+            <dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd>
           </div>
         </dl>
         {r.phase === 1 && <span className="btn small">Deposit</span>}

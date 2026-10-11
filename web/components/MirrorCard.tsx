@@ -6,7 +6,7 @@ import Pool from "./Pool";
 import RolloverCorner from "./RolloverCorner";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { TOKEN_SYMBOL, leverageOf, riskOf, isRoundOfDay, isJackpot } from "@/lib/config";
+import { TOKEN_SYMBOL, isRoundOfDay, isJackpot } from "@/lib/config";
 import { fmtToken } from "@/lib/format";
 
 function Side({ r, label }: { r: RoundView; label: string }) {
@@ -15,7 +15,7 @@ function Side({ r, label }: { r: RoundView; label: string }) {
     <div className={`side ${bear ? "bear" : ""}`}>
       <dl className="stats col">
         <div><dt>Prize · by Rounds</dt><dd><Pool r={r} /></dd></div>
-        <div><dt>Everyone put in</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
+        <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
       </dl>
       <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
         {r.phase === 1 ? `Go ${label}` : label}
@@ -47,7 +47,6 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
         <div className="pills">
           {isRoundOfDay(bull.description) && <span className="pill day">☀ Round of the day</span>}
           {isJackpot(bull.description) && <span className="pill jackpot">🏆 Jackpot · grows every week nobody wins</span>}
-          <span className="lev" title={`${leverageOf(bull.marketId, bull.leverage)}x on Perpl`}>{riskOf(leverageOf(bull.marketId, bull.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(bull, block)}</div>
         <div className="sides">

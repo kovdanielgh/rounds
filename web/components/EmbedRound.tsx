@@ -8,8 +8,8 @@ import { CardSkeleton } from "./Skeletons";
 import ProgressBar from "./ProgressBar";
 import { statusText } from "./VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
-import { THESIS, TOKEN_SYMBOL, leverageOf, riskOf } from "@/lib/config";
-import { fmtPrice, fmtToken } from "@/lib/format";
+import { THESIS } from "@/lib/config";
+import { fmtPrice } from "@/lib/format";
 
 /** One round, compact, for an iframe inside another app. id: round id or "live". */
 export default function EmbedRound({ id, asset }: { id: string; asset?: string }) {
@@ -42,7 +42,6 @@ export default function EmbedRound({ id, asset }: { id: string; asset?: string }
         <div className="card-title">
           <span className={bear ? "tag bear" : "tag"}>{THESIS[r.thesis]}</span>
           <h3>{r.asset}</h3>
-          <span className="lev" title={`${leverageOf(r.marketId, r.leverage)}x on Perpl`}>{riskOf(leverageOf(r.marketId, r.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(r, block)}</div>
         <p className="embed-desc">{r.description}</p>

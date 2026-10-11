@@ -1,10 +1,8 @@
 # Rounds
 
-**Play the market. Keep your money.**
+**Call the market. Your deposit never trades.**
 
-Pick a side on BTC. Your yield plays, your money stays.
-
-Rounds runs short rounds on Monad. Your deposit earns yield. The yield of the round trades your idea on Perpl, an on-chain order book. If the idea is correct, three depositors share the prize. If it is wrong, you lose nothing: you get your deposit back, plus base yield.
+Rounds is a no-loss up/down market on Monad. You pick up or down on BTC. Every round has a prize pool, paid by Rounds today (on mainnet: the interest on all deposits). Only the pool trades, as a real position on Perpl, an on-chain order book. Right call: three players split the pool. Wrong call: you get your whole deposit back.
 
 > Live app: [saverounds.vercel.app](https://saverounds.vercel.app/) · Network: Monad testnet (chain 10143) · Demo video: _add link_
 
@@ -13,7 +11,7 @@ Rounds runs short rounds on Monad. Your deposit earns yield. The yield of the ro
 ## The idea in 30 seconds
 
 1. **You deposit dollars** into a round, for example "BTC goes up in the next 24 hours".
-2. **The round trades only the yield.** It never trades your deposit.
+2. **Only the round's prize pool trades.** Your deposit never trades.
 3. **When the round ends,** you get your deposit back. If the idea was correct, three depositors also win the prize: 80%, 15% and 5%.
 
 A larger deposit gives a larger chance to win. Nobody can lose the deposit.

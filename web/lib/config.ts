@@ -52,8 +52,6 @@ export const ASSETS: Record<string, { name: string; glyph: string; hue: number; 
 /** Engine leverage caps per market id (PerplEngine.setLeverage). Round leverage 0 = the cap. */
 export const LEVERAGE_CAP: Record<string, number> = { "16": 15, "32": 12, "48": 10, "64": 3, "256": 5 };
 export const leverageOf = (marketId: bigint, leverage: number) => leverage || LEVERAGE_CAP[marketId.toString()] || 0;
-/** How bold the prize trade is, in one word (leverage stays in details). 10x and more is Bold. Never about the deposit. */
-export const riskOf = (lev: number) => (lev >= 10 ? "Bold" : "Steady");
 
 export const assetMeta = (asset: string) =>
   ASSETS[asset] ?? { name: asset, glyph: asset.slice(0, 1), hue: 200, priceDecimals: 0 };
