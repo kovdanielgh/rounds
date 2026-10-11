@@ -26,8 +26,14 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
   const entryT = timeOf(r.entryEnd);
   const endT = timeOf(r.end);
   // Open: the whole life of the round, with a little history. Closed and later: fixed to the live phase.
-  const fromT = r.phase >= 2 ? entryT : startT - Math.max(300, Math.floor((endT - startT) * 0.1));
-  const res = endT - fromT <= 16 * 3600 ? 60 : endT - fromT <= 3 * 86400 ? 300 : 900;
+  // At most one day of history before the round (long rounds would ask for weeks of candles).
+  const fromT = r.phase >= 2 ? entryT : startT - Math.min(86400, Math.max(300, Math.floor((endT - startT) * 0.1)));
+  // Right edge: the round end. For long rounds (a week and more) that is too far to see anything,
+  // so the view ends a bit after now and moments beyond it are not drawn.
+  const LONG = 7 * 86400;
+  const viewEnd = endT - fromT > LONG && !(now >= endT || r.phase >= 3) ? Math.min(endT, now + Math.max(3600, (now - fromT) / 2)) : endT;
+  const span = Math.min(endT, now) - fromT;
+  const res = span <= 16 * 3600 ? 60 : span <= 3 * 86400 ? 300 : span <= 10 * 86400 ? 900 : 3600;
 
   // Candle history (Perpl, through our proxy), refreshed every 15 s.
   useEffect(() => {
@@ -67,7 +73,7 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
     const pad = (hi - lo || hi * 0.001) * 0.18;
     lo -= pad;
     hi += pad;
-    const x = (t: number) => PAD.l + ((t - fromT) / (endT - fromT)) * (W - PAD.l - PAD.r);
+    const x = (t: number) => PAD.l + ((t - fromT) / (viewEnd - fromT)) * (W - PAD.l - PAD.r);
     const y = (v: number) => PAD.t + (1 - (v - lo) / (hi - lo)) * (H - PAD.t - PAD.b);
     const line = data.map((p) => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
     const first = data[0];
@@ -77,7 +83,7 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
     // Point on the line at the moment the strike was fixed.
     const atEntry = data.reduce((a, p) => (Math.abs(p.t - entryT) < Math.abs(a.t - entryT) ? p : a), data[0]);
     return { x, y, line, area, by, base, last, atEntry, lo, hi };
-  }, [points, liveV, strikeV, r.phase, r.finalPrice, ended, now, fromT, endT, entryT, scale]);
+  }, [points, liveV, strikeV, r.phase, r.finalPrice, ended, now, fromT, endT, viewEnd, entryT, scale]);
 
   const hhmm = (t: number) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const fmt = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: v < 1 ? 5 : 2 });
@@ -111,7 +117,9 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
         {[
           ...(r.phase === 1 ? [{ t: entryT, label: "entry closes" }] : []),
           { t: endT, label: "round ends" },
-        ].map((m) => (
+        ]
+          .filter((m) => m.t <= viewEnd)
+          .map((m) => (
           <g key={m.label}>
             <line x1={x(m.t)} x2={x(m.t)} y1={PAD.t - 8} y2={bottom} className="moment" />
             <text x={x(m.t) - 4} y={PAD.t - 12} className="moment-label" textAnchor="end">{m.label}</text>

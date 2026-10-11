@@ -16,7 +16,7 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
@@ -112,7 +112,7 @@ export default function VaultPage() {
             <dl className="stats col">
               <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
               <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
-              <div><dt>Prize trade on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
+              <div><dt>Prize trade on Perpl</dt><dd>{isFixedPrize(r.marketId, r.leverage) ? "None: fixed prize" : `${leverageOf(r.marketId, r.leverage)}x`}</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>
             <p className="small">

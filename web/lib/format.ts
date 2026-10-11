@@ -26,5 +26,6 @@ export const fmtDuration = (seconds: number) => {
   if (seconds <= 0) return "now";
   if (seconds < 60) return `${Math.ceil(seconds)}s`;
   if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`;
-  return `${(seconds / 3600).toFixed(1)}h`;
+  if (seconds < 48 * 3600) return `${(seconds / 3600).toFixed(1)}h`;
+  return `${Math.round(seconds / 86400)}d`;
 };

@@ -22,9 +22,19 @@ export const ENGINE = envAddress(process.env.NEXT_PUBLIC_ENGINE);
 export const ROUNDS_V1 = envAddress(process.env.NEXT_PUBLIC_ROUNDS_V1 || "0xF265552D95De56AecdC1711966f2C17f89965bd0");
 export const DISCORD_URL = "https://discord.gg/QZMqnBeKC";
 /** Our own wallets, marked "team" on the Season page (honest stats). */
-export const TEAM = (process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe")
-  .toLowerCase()
-  .split(",");
+/** Test players we funded ourselves (one-year BTC rounds #38/#39), always marked "team". */
+const TEST_WALLETS = [
+  "0xA5b8BD1b0EA6Afa0dFFA62296b776C817F743cE2",
+  "0x5fb85f0C94a884A2b318334FA6CdF178C4b56f81",
+  "0x91503C4f1e216f79B21eB726C9b7d521111EdBb3",
+  "0xE96EE40cd0f73821c99e94fDa613988174Cdb828",
+  "0x234fF607e36Cb17ED3a5EC9b821a629568c9334B",
+];
+export const TEAM = [...(process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe").split(","), ...TEST_WALLETS].map((a) =>
+  a.trim().toLowerCase(),
+);
+/** A round asks for more leverage than the market allows: the engine refuses on purpose, the prize never trades. */
+export const isFixedPrize = (marketId: bigint, leverage: number) => leverage > (LEVERAGE_CAP[marketId.toString()] ?? 0);
 
 export const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "";
 
