@@ -11,15 +11,15 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://saverounds.vercel.app"),
   // Pages set a short title ("Round #12", "Profile"); the template adds the brand.
-  title: { default: "Rounds · Call crypto up or down. Wrong? You get every dollar back.", template: "%s · Rounds" },
-  description: "Call crypto up or down. Wrong? You get every dollar back. Right? You share a prize we pay for. A no-loss up/down market on Monad testnet.",
+  title: { default: "Rounds · Wrong call? Every dollar back.", template: "%s · Rounds" },
+  description: "Call crypto up or down. Wrong call? Every dollar back. Right call? You share a prize we pay for. A no-loss up/down market on Monad testnet.",
   applicationName: "Rounds",
   keywords: ["no-loss", "prediction market", "Monad", "Perpl", "up or down", "BTC", "testnet", "AUSD"],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Rounds",
-    title: "Rounds · Call crypto up or down. Wrong? You get every dollar back.",
+    title: "Rounds · Wrong call? Every dollar back.",
     description: "Right? You share a prize we pay for. Put in 50, get 50 back either way.",
   },
   twitter: { card: "summary_large_image" },

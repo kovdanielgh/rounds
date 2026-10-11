@@ -2,7 +2,7 @@
 
 **A no-loss up/down market on Monad's on-chain order book.**
 
-Call crypto up or down. Wrong? You get every dollar back. Right? You share a prize we pay for.
+Wrong call? Every dollar back. Call crypto up or down; right calls share a prize we pay for.
 
 **Short description (one line):** Rounds is a no-loss up/down market on Monad: you pick up or down on BTC, only a prize pool trades on Perpl, and your deposit always comes back.
 

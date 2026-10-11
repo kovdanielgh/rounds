@@ -1932,11 +1932,6 @@ body {
 }
 
 /* One concrete example instead of an explanation. */
-.hero-sub {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 17px;
-}
 
 .money-example {
   margin: 12px 0 0;
@@ -2145,4 +2140,18 @@ a.connect.account {
   margin: -6px 0 12px;
   color: var(--acid);
   font-size: 14px;
+}
+
+.hero-accent {
+  color: var(--acid);
+}
+
+/* Mirror pair: both buttons on one line, even when one side shows more rows. */
+.side {
+  display: flex;
+  flex-direction: column;
+}
+
+.side .btn {
+  margin-top: auto;
 }

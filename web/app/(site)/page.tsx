@@ -56,9 +56,9 @@ export default function Home() {
   return (
     <main className="page">
       <section className="hero">
-        <h1>Call crypto up or down. Wrong? You get every dollar back.</h1>
-        <p className="hero-sub">Right? You share a prize we pay for.</p>
-        <p className="money-example">Put in 50, get 50 back either way.</p>
+        <h1>
+          Wrong call? <span className="hero-accent">Every dollar back.</span>
+        </h1>
         {/* StatsBar is hidden until the numbers are worth showing (plan: "Скрыто до поры"). */}
         <WinnersFeed rounds={rounds} block={block} />
       </section>
