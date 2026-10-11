@@ -13,20 +13,14 @@ import { useTx } from "@/hooks/useTx";
 
 const PRESETS = [10, 50, 100];
 
-/** Where the money goes, at the moment of doubt: right under the button. */
-function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
+/** Where the money goes, at the moment of doubt: one example and the contract to check it. */
+function MoneyPath({ amount }: { amount?: bigint }) {
+  const n = amount ? fmtToken(amount) : "10";
   return (
     <div className="money-path small">
-      {/* One concrete example with the player's own numbers instead of an explanation. */}
-      <p className="money-example">
-        Put in {amount ? fmtToken(amount) : 10}, get {amount ? fmtToken(amount) : 10} back either way.
-        {prize !== undefined && prize > 0n ? ` Right call: share the ${fmtToken(prize)} ${TOKEN_SYMBOL} prize.` : ""}
-      </p>
-      <p className="muted">Why free? It&apos;s testnet: we pay the prize to test the product. On mainnet, interest on all deposits pays it.</p>
-      <p className="muted trust">
-        Test money only ·{" "}
-        <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>
-        {" "}· Nobody can take your deposit, not even us.
+      <p className="money-example">Put in {n}, get {n} back either way.</p>
+      <p className="small">
+        <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Verified contract ↗</a>
       </p>
     </div>
   );
@@ -76,7 +70,7 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="deposit">
         <button className="btn wide" onClick={login}>Log in to play</button>
         <p className="muted small deposit-note">Log in with email. Free test USD arrives by itself.</p>
-        <MoneyPath prize={r?.livePool} />
+        <MoneyPath />
       </div>
     );
 
@@ -178,7 +172,7 @@ export default function DepositForm({ id }: { id: bigint }) {
               onChange={(e) => setAmount(e.target.value.replace(",", "."))}
             />
           </div>
-          <p className="try-it">Don&apos;t trust us. Put in 10, press Exit, watch it come back.</p>
+          <p className="try-it">Not sure? Try 10, then press Exit.</p>
           <button className="btn wide" onClick={submit} disabled={busy || amt === 0n || tooMuch} /* not blocked while the balance loads: the wallet checks it too */>
             {label}
           </button>
@@ -187,9 +181,9 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="muted small">
         {tooMuch
           ? `You have ${fmtToken(max)} ${TOKEN_SYMBOL}. Try a smaller amount.`
-          : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} ready to play` : ""}`}
+          : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free >= 10_000n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} ready to play` : ""}`}
       </div>
-      <MoneyPath amount={amt} prize={r?.livePool} />
+      <MoneyPath amount={amt} />
       {error && <div className="error small" role="alert">{error}</div>}
     </div>
   );

@@ -6,7 +6,7 @@ export const contentType = "image/png";
 
 const ACID = "#b6ff1a";
 
-/** Default share card for every page: the name, big, and one line that says what it is. */
+/** Default share card for every page: the name, one line that says what it is, and what to do. */
 export default function OpengraphImage() {
   return new ImageResponse(
     (
@@ -23,7 +23,14 @@ export default function OpengraphImage() {
             <div style={{ display: "flex", width: 44, height: 44, borderRadius: 44, background: ACID, marginLeft: 8, marginBottom: 22 }} />
           </div>
           <div style={{ display: "flex", fontSize: 42, marginTop: 40, color: "#9fb6d8" }}>
-            Wrong call? Every dollar back.
+            Wrong call?&nbsp;<span style={{ color: ACID }}>Every dollar back.</span>
+          </div>
+          {/* Call to action: what to do, and where. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 44 }}>
+            <div style={{ display: "flex", padding: "14px 30px", borderRadius: 12, background: ACID, color: "#0a0f05", fontSize: 30, fontWeight: 700 }}>
+              Make your call →
+            </div>
+            <div style={{ display: "flex", fontSize: 28, color: "#9fb6d8" }}>saverounds.vercel.app</div>
           </div>
         </div>
         <div style={{ display: "flex", height: 8, width: "100%", background: `linear-gradient(90deg, ${ACID}, #efffc2, ${ACID})` }} />

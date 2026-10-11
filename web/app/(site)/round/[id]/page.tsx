@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { useEffect, useState } from "react";
+import { parseAbiItem } from "viem";
+import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
 import Confetti from "@/components/Confetti";
 import DepositForm from "@/components/DepositForm";
 import WhosIn from "@/components/WhosIn";
@@ -16,10 +18,53 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isYearLong, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isRollover, isYearLong, leverageOf, CHAIN_ID, txUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
+
+const engineOpened = parseAbiItem("event EngineOpened(uint256 indexed id, uint256 margin)");
+
+/** The transaction that opened this round's Perpl position (the strike, right after entry closes). */
+function useOpenTx(r?: RoundView) {
+  const client = usePublicClient({ chainId: CHAIN_ID });
+  const [hash, setHash] = useState<`0x${string}`>();
+  const traded = !!r && r.strike > 0n && r.funded > 0n && (r.borrowed > 0n || r.phase >= 3);
+  const id = r?.id;
+  const from = r?.entryEnd;
+  useEffect(() => {
+    if (!client || !traded || id === undefined || from === undefined) return;
+    let alive = true;
+    // The strike lands a few blocks after entry closes (keeper), at most a few hundred later (owner fallback).
+    client
+      .getLogs({ address: ROUNDS, event: engineOpened, args: { id }, fromBlock: from, toBlock: from + 500n })
+      .then((logs) => {
+        if (alive && logs[0]) setHash(logs[0].transactionHash);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [client, traded, id, from]);
+  return hash;
+}
+
+/**
+ * The rules in plain words, built from the round itself (the same for every round, old or new),
+ * not from the text stored at creation.
+ */
+function rulesOf(r: RoundView) {
+  const up = r.thesis !== 2;
+  return [
+    "Start price: the Perpl price when entry closes.",
+    "Final price: the price when the round ends.",
+    `${up ? "Up" : "Down"} is right if the final price is ${up ? "above" : "below"} the start price.`,
+    "Right call: 3 winners are drawn at random. A bigger deposit gives a bigger chance.",
+    ...(isRollover(r.description) ? ["A win rolls the prize into the next round, up to 3 in a row. The third win is drawn."] : []),
+    "Wrong call: everyone gets their whole deposit back.",
+    "You can exit before entry closes.",
+  ];
+}
 
 /** Price move from the start price, signed, as "+0.21%" / "−0.21%". */
 function movePct(r: RoundView) {
@@ -58,6 +103,7 @@ export default function VaultPage() {
   });
   const [, stake, claimed] = (mine?.[0] as readonly [number, bigint, boolean, bigint, bigint]) ?? [0, 0n, false];
   const prize = (mine?.[1] as bigint) ?? 0n;
+  const openTx = useOpenTx(r);
 
   if (!r)
     return (
@@ -107,7 +153,11 @@ export default function VaultPage() {
           <p>{r.description || "—"}</p>
           <details className="details">
             <summary>Rules</summary>
-            <p>{r.rules || "—"}</p>
+            <ul className="rules">
+              {rulesOf(r).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </details>
           <WhosIn r={r} />
         </section>
@@ -123,7 +173,6 @@ export default function VaultPage() {
             <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {stake > 0n && <div><dt>You put in · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
-          {r.phase < 4 && <p className="muted small prize-how">If the call is right, 3 winners are drawn at random. A bigger deposit gives a bigger chance.</p>}
           {/* The worst case, told as a story: the call was wrong and it cost nothing. */}
           {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0") && <p className="prize-how wrong-story">{wrongStory(r)}</p>}
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
@@ -135,11 +184,12 @@ export default function VaultPage() {
               <div><dt>Prize trade on Perpl</dt><dd>{isFixedPrize(r.marketId, r.leverage) ? "None: fixed prize" : `${leverageOf(r.marketId, r.leverage)}x`}</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>
-            <p className="small">
-              <a className="tx-link" href={addressUrl(ENGINE)} target="_blank" rel="noreferrer">View the Perpl position (engine) ↗</a>
-              {" · "}
-              <a className="tx-link" href={addressUrl(ROUNDS)} target="_blank" rel="noreferrer">Contract ↗</a>
-            </p>
+            {/* Only once a real position exists: a direct link to the transaction that opened it. */}
+            {openTx && (
+              <p className="small">
+                <a className="tx-link" href={txUrl(openTx)} target="_blank" rel="noreferrer">The Perpl position for this round ↗</a>
+              </p>
+            )}
           </details>
 
           {r.phase === 1 && <DepositForm id={r.id} />}

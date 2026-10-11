@@ -1884,52 +1884,8 @@ body {
   margin: 4px 0 12px;
 }
 
-/* Deposit: where the money goes, under the button */
-.money-path {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid rgba(182, 255, 26, 0.25);
-  border-radius: 10px;
-  background: rgba(182, 255, 26, 0.04);
-}
-
-.money-path p {
-  margin: 0;
-}
 
 
-.money-path .trust {
-  font-size: 12px;
-}
-
-/* Deposit: where the money goes, under the button */
-.money-path {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid rgba(182, 255, 26, 0.25);
-  border-radius: 10px;
-  background: rgba(182, 255, 26, 0.04);
-}
-
-.money-path p {
-  margin: 0;
-}
-
-
-.money-path .trust {
-  font-size: 12px;
-}
-
-/* Three steps, one per line: long plain sentences must not wrap into each other. */
-.how-line.steps {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
 
 /* One concrete example instead of an explanation. */
 
@@ -1940,10 +1896,6 @@ body {
   font-weight: 600;
 }
 
-.money-path .money-example {
-  margin: 0;
-  font-size: 14px;
-}
 
 /* ---- header: full-width bar, content as wide as the page (overrides the rules above) ---- */
 .header {
@@ -2022,11 +1974,6 @@ body {
   margin-top: 6px;
 }
 
-.try-it {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: var(--text);
-}
 
 
 .proof-line {
@@ -2154,4 +2101,32 @@ a.connect.account {
 
 .side .btn {
   margin-top: auto;
+}
+
+.rules {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+/* Deposit: one example and the contract link under the button, no box around them. */
+.money-path {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.money-path p {
+  margin: 0;
+}
+
+.money-path .money-example {
+  font-size: 14px;
+}
+
+.try-it {
+  margin: 12px 0 8px;
+  font-size: 14px;
+  color: var(--text);
 }
