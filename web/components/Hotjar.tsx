@@ -1,7 +1,7 @@
 import Script from "next/script";
 
 /** Hotjar: heatmaps and session recordings of the site (not of embedded cards). Loads after the page is interactive. */
-const HOTJAR_ID = 6421694;
+const HOTJAR_ID = 6793200;
 
 export default function Hotjar() {
   return (
