@@ -1,6 +1,6 @@
 # Rounds
 
-**Call the market. Your deposit never trades.**
+**Call crypto up or down. Wrong? You get every dollar back.**
 
 Rounds is a no-loss up/down market on Monad. You pick up or down on BTC. Every round has a prize pool, paid by Rounds today (on mainnet: the interest on all deposits). Only the pool trades, as a real position on Perpl, an on-chain order book. Right call: three players split the pool. Wrong call: you get your whole deposit back.
 

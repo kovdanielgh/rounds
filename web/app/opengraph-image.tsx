@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Rounds: call the market, your deposit never trades.";
+export const alt = "Rounds: call crypto up or down. Wrong? You get every dollar back.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -23,7 +23,7 @@ export default function OpengraphImage() {
             <div style={{ display: "flex", width: 44, height: 44, borderRadius: 44, background: ACID, marginLeft: 8, marginBottom: 22 }} />
           </div>
           <div style={{ display: "flex", fontSize: 42, marginTop: 40, color: "#9fb6d8" }}>
-            Call the market. Your deposit never trades.
+            Call crypto up or down. Wrong? Every dollar back.
           </div>
         </div>
         <div style={{ display: "flex", height: 8, width: "100%", background: `linear-gradient(90deg, ${ACID}, #efffc2, ${ACID})` }} />

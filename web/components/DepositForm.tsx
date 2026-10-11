@@ -10,7 +10,6 @@ import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl, addressUrl
 import { fmtToken } from "@/lib/format";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
-import MoneyBoxes from "./MoneyBoxes";
 
 const PRESETS = [10, 50, 100];
 
@@ -18,7 +17,11 @@ const PRESETS = [10, 50, 100];
 function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
   return (
     <div className="money-path small">
-      <MoneyBoxes amount={amount} prize={prize} />
+      {/* One concrete example with the player's own numbers instead of an explanation. */}
+      <p className="money-example">
+        Put in {amount ? fmtToken(amount) : 100}, get {amount ? fmtToken(amount) : 100} back either way.
+        {prize !== undefined && prize > 0n ? ` Right call: share the ${fmtToken(prize)} ${TOKEN_SYMBOL} prize.` : ""}
+      </p>
       <p className="muted trust">
         Test money only ·{" "}
         <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>
