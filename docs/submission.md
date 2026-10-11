@@ -12,6 +12,14 @@ Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/
 
 ---
 
+## Who it is for first
+
+**A perp trader on Monad who just got liquidated** and is afraid to open the next position. They still want to make market calls, and they still want the rare big win. Today every way to act on a call puts the deposit at risk.
+
+- **Why this market does not exist yet:** no-loss products (PoolTogether) give the deposit back, but the user cannot pick a side and nothing trades. Prediction markets and perps let you pick a side, but they take the deposit when you are wrong.
+- **What Rounds gives them:** pick up or down, keep every dollar, and a chance at a random high payoff. The prize pool trades at up to 15x on Perpl, a rollover can carry it 3 rounds in a row, and 80% of it goes to one winner. Small, rare, big wins on top of a deposit that never trades.
+- **Counterparties:** Perpl is the execution venue (a "no-loss mode" that brings it new traders), Agora's AUSD on Aave is the yield source on mainnet.
+
 ## The problem
 
 People like to play: lottery tickets, sports bets, prediction markets. Almost always, they lose money.
@@ -43,13 +51,15 @@ Your deposit never trades. Only the prize pool does.
 | PoolTogether | deposit comes back | small prizes (about 2.5% a year), pure luck, no choice |
 | Premium Bonds (UK) | deposit comes back, state guarantee | UK only, no crypto, no choice of side |
 
-**Rounds:** the user picks a side, the prize trades as a real position on Perpl, and the deposit always comes back. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 49 tests.
+**Rounds:** the user picks a side, the prize trades as a real position on Perpl, and the deposit always comes back. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 51 tests.
 
-## Why Monad
+## Why only on Monad
 
-- **The contract trades on an on-chain order book.** One transaction fixes the strike and places a real order on Perpl. This needs fast blocks and a fully on-chain order book.
-- **Short rounds are cheap.** A round of 15 minutes or of one day costs a few transactions.
-- **A round is a function call.** All rounds live in one contract. A Bulls and a Bears round on the same blocks form a mirror pair.
+**Every round is its own trade on an on-chain order book.** At the moment entry closes, one transaction reads the Perpl price, fixes it as the start price and opens a real position on Perpl. At the end, one transaction closes it and draws the winners. This only works when the price, the order book and the settlement live on the same fast chain:
+
+- **0.4 s blocks and an on-chain CLOB:** the start price and the position are fixed in the same block, so nobody can trade against a stale price.
+- **Cheap transactions:** a 15-minute round costs a few transactions. On Ethereum the gas would be larger than the prize.
+- **The structure is new:** principal and yield are split, the user picks the side of the yield leg, and the yield leg is executed on a CLOB. Each side of an up/down pair gets its own real position (long and short on separate Perpl accounts).
 
 ## You do not need to trust us
 
@@ -57,7 +67,7 @@ Your deposit never trades. Only the prize pool does.
 - Anyone can call `setStrike` and `settle`, but only in a 150-block window after the phase ends. After the window, only the owner can call them.
 - Pyth Entropy gives the random number for the draw.
 - User deposits never go to the trading engine. The maximum loss is the round budget.
-- 49 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
+- 51 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
 - All contracts are verified on MonadScan.
 
 ## What works today (Monad testnet)

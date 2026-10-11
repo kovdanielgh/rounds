@@ -114,7 +114,7 @@ Your chance to be drawn is your stake divided by all stakes in the round.
 - **Anyone can call them, but only in a short window** (150 blocks, about 45 s) after the phase ends. A caller cannot pick a better moment.
 - **The draw uses Pyth Entropy,** a verifiable random number. A retry is owner-only, so nobody can cancel a result they do not like.
 - **User deposits never go to the engine.** Only the round budget does. The contract keeps this rule.
-- **49 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
+- **51 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
 
 ---
 
@@ -149,7 +149,9 @@ All our contracts are **verified on MonadScan**: click an address to read the so
 | Contract | Address | Job |
 |---|---|---|
 | `Rounds` | [`0xA046…715a`](https://testnet.monadscan.com/address/0xA04679b2A4f457d6056bd1a8Cf375618eF90715a#code) | Rounds, deposits, yield split, draw, claim |
-| `PerplEngine` | [`0xD5d7…bA86`](https://testnet.monadscan.com/address/0xD5d7232bDe5744A3afE276b22d83253E9db4bA86#code) | Opens and closes one Perpl position per round |
+| `SplitEngine` | [`0xE0e1…Ad53`](https://testnet.monadscan.com/address/0xE0e1485Be0A529D138087818c49441cc35F2Ad53#code) | Engine router: longs to one Perpl account, shorts to another, so both sides of a pair trade |
+| `PerplEngine` (longs) | [`0xD5d7…bA86`](https://testnet.monadscan.com/address/0xD5d7232bDe5744A3afE276b22d83253E9db4bA86#code) | Opens and closes the long positions on Perpl |
+| `PerplEngine` (shorts) | [`0x8681…Aded`](https://testnet.monadscan.com/address/0x86819A1B757735B3EEC8A9536e71C882b40BAded#code) | Opens and closes the short positions on Perpl |
 | `PerplPriceSource` | [`0xcF23…23D3`](https://testnet.monadscan.com/address/0xcF23CC9d662d1d623546BA3AB2A8fE07231723D3#code) | Reads the Perpl mark price |
 | `Faucet` | [`0xbCF1…7e19`](https://testnet.monadscan.com/address/0xbCF1beF801CC4A9c948A464410DB210Fe2d07e19#code) | Test USD and a little MON for new players; our relayer pays the gas |
 | `MockYieldVault` | [`0xF731…BfBc0`](https://testnet.monadscan.com/address/0xF73182502D01fF6E564bF683FB2e7f7D180BfBc0#code) | ERC-4626 vault with fixed APR (testnet only) |
@@ -204,6 +206,7 @@ npm run dev
 ```
 contracts/src/Rounds.sol            rounds, vault accounting, draw, claim
 contracts/src/PerplEngine.sol       Perpl adapter (one position per round)
+contracts/src/SplitEngine.sol       router: longs and shorts on separate Perpl accounts
 contracts/src/PerplPriceSource.sol  on-chain price for strike and settle
 contracts/src/MockYieldVault.sol    ERC-4626 stand-in for Aave AUSD (static aToken wrapper)
 contracts/src/Faucet.sol            testnet faucet: 100 USD + 0.3 MON per day, daily cap
@@ -219,7 +222,7 @@ web/                                Next.js app (site, /season, /embed, share ca
 
 - **Testnet only.** The yield vault is a mock with a fixed APR, paid from a reserve that we fund. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper, with no change to `Rounds`. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 - **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. Options or outcome tokens can add convexity later.
-- **Mirror pairs:** the engine holds one position per market, so only one side of a pair trades.
+- **One position per market and side:** Perpl nets positions per account, so each engine (longs, shorts) holds one position per market. Two rounds on the same market and side at the same time: the second one plays for a fixed prize.
 - **A random draw has legal risk** in some countries. In mirror pairs each user picks a side, which makes the product closer to a derivative.
 
 ## Next

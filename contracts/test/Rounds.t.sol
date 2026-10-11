@@ -9,6 +9,7 @@ import {MockPriceSource} from "./MockPriceSource.sol";
 import {MockEngine} from "./MockEngine.sol";
 import {MockYieldVault, IERC20Like} from "../src/MockYieldVault.sol";
 import {IEngine} from "../src/IEngine.sol";
+import {SplitEngine, IERC20Split} from "../src/SplitEngine.sol";
 
 contract RoundsTest is Test {
     receive() external payable {}
@@ -759,5 +760,60 @@ contract RoundsTest is Test {
         rounds.setStrike(b);
         vm.expectRevert(Rounds.WrongPhase.selector);
         rounds.linkRide(a, b);
+    }
+
+    // ---------------------------------------------------------------- split engine (two accounts)
+
+    function test_split_bothSidesOfPairTrade_legacyClosesOnLongs() public {
+        MockEngine longsE = new MockEngine(usd);
+        MockEngine shortsE = new MockEngine(usd);
+        // a round opened before the switch, on the old (longs) engine
+        rounds.setEngine(IEngine(address(longsE)));
+        rounds.setEconomics(300, 230, 4_650, 78_840_000);
+        uint256 old = _create("BTC", 16, Rounds.Thesis.Bearish, 10e6);
+        _enter(alice, old, 100e6);
+        px.set(16, 80_000);
+        vm.roll(rounds.getRound(old).entryEnd + 1);
+        rounds.setStrike(old);
+        assertGt(rounds.getRound(old).borrowed, 0);
+
+        SplitEngine split = new SplitEngine(IERC20Split(address(usd)), address(rounds), IEngine(address(longsE)), IEngine(address(shortsE)));
+        rounds.setEngine(IEngine(address(split)));
+
+        uint256 bull = _create("BTC", 16, Rounds.Thesis.Bullish, 10e6);
+        uint256 bear = _create("BTC", 16, Rounds.Thesis.Bearish, 10e6);
+        _enter(bob, bull, 100e6);
+        _enter(carol, bear, 100e6);
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = bull;
+        ids[1] = bear;
+        vm.roll(rounds.getRound(bull).entryEnd + 1);
+        rounds.setStrikeMany(ids);
+        // both sides trade: the long on one account, the short on the other
+        assertGt(rounds.getRound(bull).borrowed, 0);
+        assertGt(rounds.getRound(bear).borrowed, 0);
+        assertGt(longsE.marginOf(bull), 0);
+        assertGt(shortsE.marginOf(bear), 0);
+        assertTrue(longsE.longOf(bull));
+        assertFalse(shortsE.longOf(bear));
+
+        // everything closes and comes back through the split engine, the old round too
+        vm.roll(rounds.getRound(old).end + 1);
+        rounds.settle{value: 0.1 ether}(old);
+        assertEq(rounds.getRound(old).borrowed, 0);
+        vm.roll(rounds.getRound(bull).end + 1);
+        rounds.settleMany{value: 0.2 ether}(ids);
+        assertEq(rounds.getRound(bull).borrowed, 0);
+        assertEq(rounds.getRound(bear).borrowed, 0);
+        assertEq(usd.balanceOf(address(split)), 0);
+    }
+
+    function test_split_onlyRounds() public {
+        MockEngine a = new MockEngine(usd);
+        SplitEngine split = new SplitEngine(IERC20Split(address(usd)), address(rounds), IEngine(address(a)), IEngine(address(a)));
+        vm.expectRevert(SplitEngine.NotRounds.selector);
+        split.open(1, 16, true, 1, 0);
+        vm.expectRevert(SplitEngine.NotRounds.selector);
+        split.close(1);
     }
 }
