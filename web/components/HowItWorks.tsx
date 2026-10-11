@@ -1,12 +1,10 @@
-/** One line, three steps, no jargon. */
+/** Three steps in plain words: what you do, why the money is safe, what you get. */
 export default function HowItWorks() {
   return (
-    <p className="how-line">
-      <span><b>1</b> Deposit and pick Bulls or Bears</span>
-      <span className="how-arrow">→</span>
-      <span><b>2</b> Only the yield trades on Perpl</span>
-      <span className="how-arrow">→</span>
-      <span><b>3</b> Win the prize, or get your money back</span>
+    <p className="how-line steps">
+      <span><b>1</b> Put in USD and pick up or down</span>
+      <span><b>2</b> Your money stays safe. Only the prize is traded</span>
+      <span><b>3</b> Right side: 3 players share the prize. Your money comes back either way</span>
     </p>
   );
 }

@@ -6,12 +6,30 @@ import { maxUint256, parseUnits } from "viem";
 import { useAccount, useReadContracts } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl } from "@/lib/config";
+import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl, addressUrl } from "@/lib/config";
 import { fmtToken } from "@/lib/format";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 
 const PRESETS = [10, 50, 100];
+
+/** Where the money goes, at the moment of doubt: right under the button. Plain words, no "yield". */
+function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
+  return (
+    <div className="money-path small">
+      <p>
+        <strong>Your {amount ? `${fmtToken(amount)} ` : ""}{TOKEN_SYMBOL} stays yours.</strong> It sits in the Rounds contract in your
+        name and goes back to your wallet when the round ends. You can also take it out before entry closes.
+      </p>
+      <p className="muted">Only the {prize !== undefined ? `${fmtToken(prize)} ${TOKEN_SYMBOL} ` : ""}prize is traded, never your money.</p>
+      <p className="muted trust">
+        Test money only ·{" "}
+        <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>
+        {" "}· Nobody can take your deposit, not even us.
+      </p>
+    </div>
+  );
+}
 const ONE = 10n ** BigInt(TOKEN_DECIMALS);
 
 /**
@@ -57,7 +75,7 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="deposit">
         <button className="btn wide" onClick={login}>Log in to play</button>
         <p className="muted small deposit-note">Log in with email. Free test USD arrives by itself.</p>
-        <div className="promise-line small">Your money always comes back.</div>
+        <MoneyPath prize={r?.livePool} />
       </div>
     );
 
@@ -171,7 +189,7 @@ export default function DepositForm({ id }: { id: bigint }) {
           ? `You have ${fmtToken(max)} ${TOKEN_SYMBOL}. Try a smaller amount.`
           : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} unused in Rounds` : ""}`}
       </div>
-      <div className="promise-line small">Your money always comes back.</div>
+      <MoneyPath amount={amt} prize={r?.livePool} />
       {error && <div className="error small" role="alert">{error}</div>}
     </div>
   );

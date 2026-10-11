@@ -1900,3 +1900,56 @@ body {
 .prize-how {
   margin: 4px 0 12px;
 }
+
+/* Deposit: where the money goes, under the button */
+.money-path {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(182, 255, 26, 0.25);
+  border-radius: 10px;
+  background: rgba(182, 255, 26, 0.04);
+}
+
+.money-path p {
+  margin: 0;
+}
+
+.money-path strong {
+  color: var(--acid);
+}
+
+.money-path .trust {
+  font-size: 12px;
+}
+
+/* Deposit: where the money goes, under the button */
+.money-path {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(182, 255, 26, 0.25);
+  border-radius: 10px;
+  background: rgba(182, 255, 26, 0.04);
+}
+
+.money-path p {
+  margin: 0;
+}
+
+.money-path strong {
+  color: var(--acid);
+}
+
+.money-path .trust {
+  font-size: 12px;
+}
+
+/* Three steps, one per line: long plain sentences must not wrap into each other. */
+.how-line.steps {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
