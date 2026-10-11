@@ -35,7 +35,7 @@ export function statusText(r: RoundView, block?: bigint) {
   return `Settled · ${(r.thesis === 1) === r.thesisWon ? "Up" : "Down"} won`;
 }
 
-export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }) {
+export default function VaultCard({ r, block, hint }: { r: RoundView; block?: bigint; hint?: string }) {
   const bear = r.thesis === 2;
   return (
     <Link href={`/round/${r.id}`} className={`card ${shakeOf(r, block)} ${r.phase === 4 ? "done" : ""}`}>
@@ -59,6 +59,7 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
             </div>
           )}
         </dl>
+        {hint && <p className="first-hint">{hint}</p>}
         {r.phase === 1 && <span className="btn small">Deposit</span>}
       </div>
       <ProgressBar value={progressOf(r, block)} bearish={bear} />

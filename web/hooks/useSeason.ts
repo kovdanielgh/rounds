@@ -11,6 +11,8 @@ export type Player = {
   wins: number;
   prizes: bigint;
   best: bigint; // biggest single prize
+  calls: number; // finished rounds the player was in
+  right: number; // of them, the side was right (skill; the prize draw is luck)
   staked: bigint; // money put into rounds, all of it came back or will
   streak: number; // days in a row (UTC) with at least one round, up to today or yesterday
   lastDay: number;
@@ -55,9 +57,13 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
       const prize = info[i * 2 + 1] as bigint;
       if (stake === 0n) return; // exited before the window closed
       const p = byUser.get(user) ?? {
-        address: user, rounds: 0, wins: 0, prizes: 0n, best: 0n, staked: 0n, streak: 0, lastDay: 0, days: new Set<number>(),
+        address: user, rounds: 0, wins: 0, prizes: 0n, best: 0n, calls: 0, right: 0, staked: 0n, streak: 0, lastDay: 0, days: new Set<number>(),
       };
       p.rounds += 1;
+      if (r.phase === 4) {
+        p.calls += 1;
+        if (r.thesisWon) p.right += 1;
+      }
       p.staked += stake;
       if (prize > 0n) {
         p.wins += 1;
@@ -79,8 +85,8 @@ export function useSeason(rounds: RoundView[], block?: bigint) {
     }
     return { ...p, streak, lastDay: Math.max(...days) };
   });
-  // Most kept safe first: the mission is to keep and grow people's money, not to rank luck.
-  players.sort((a, b) => (b.staked > a.staked ? 1 : b.staked < a.staked ? -1 : b.prizes > a.prizes ? 1 : b.prizes < a.prizes ? -1 : 0));
+  // Most right calls first: being right is the skill, the prize draw is luck. Then fewer calls, then prizes.
+  players.sort((a, b) => b.right - a.right || a.calls - b.calls || (b.prizes > a.prizes ? 1 : b.prizes < a.prizes ? -1 : 0));
 
   return {
     players,

@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { DISCORD_URL } from "@/lib/config";
 
-/** The window opens by itself after the 1st and the 5th result the player sees. The button opens it any time. */
-const ASK_AT = [1, 5];
+/** The window opens by itself after the 5th result the player sees. The button opens it any time. */
+const ASK_AT = [5];
 const key = (a?: string) => `rounds.results.${a?.toLowerCase() ?? "anon"}`;
 
 function count(a?: string) {

@@ -16,6 +16,7 @@ export type ShareData = {
   stake: number;
   prize: number;
   settled: boolean;
+  right: boolean; // settled and the side was right (a prize is a separate draw)
 };
 
 /** Read the round result from the contract, so a share link cannot fake the amount. */
@@ -44,6 +45,7 @@ export async function readShare(idParam: string, addressParam: string): Promise<
       stake: Number(formatUnits(entry[1], TOKEN_DECIMALS)),
       prize: Number(formatUnits(prize, TOKEN_DECIMALS)),
       settled: Number(phase) === 4,
+      right: Number(phase) === 4 && round.thesisWon,
     };
   } catch {
     return null;
@@ -53,7 +55,9 @@ export async function readShare(idParam: string, addressParam: string): Promise<
 export const usd = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: n < 10 ? 2 : 0 });
 
 export function shareText(d: ShareData) {
-  return d.prize > 0
-    ? `I won ${usd(d.prize)} USD on Rounds and kept my deposit.`
-    : `I called ${d.asset} ${d.side.toLowerCase()} on Rounds and kept my ${usd(d.stake)} USD deposit.`;
+  const call = `I called ${d.asset} ${d.side.toLowerCase()}.`;
+  if (d.prize > 0) return `${call} Right, and won ${usd(d.prize)} USD. My deposit never traded.`;
+  if (d.right) return `${call} Right. My deposit never traded.`;
+  if (d.settled) return `I was wrong about ${d.asset} and still got my ${usd(d.stake)} USD back.`;
+  return `${call} My deposit never trades. Rounds.`;
 }

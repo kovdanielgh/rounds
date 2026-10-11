@@ -2140,3 +2140,9 @@ a.connect.account {
     display: none;
   }
 }
+
+.first-hint {
+  margin: -6px 0 12px;
+  color: var(--acid);
+  font-size: 14px;
+}

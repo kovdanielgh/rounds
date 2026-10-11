@@ -117,7 +117,11 @@ export default function Profile() {
   const active = rows.filter((x) => x.stake > 0n && !x.claimed);
   const history = rows.filter((x) => x.claimed || x.stake === 0n);
   const claimable = active.filter((x) => x.r.phase === 4);
-  const streak = streakOf(rows.filter((x) => x.stake > 0n || x.claimed), block);
+  const played = rows.filter((x) => x.stake > 0n || x.claimed);
+  const streak = streakOf(played, block);
+  // The call record is the main number: being right is the skill. The day streak stays small.
+  const calls = played.filter((x) => x.r.phase === 4);
+  const right = calls.filter((x) => x.r.thesisWon).length;
   const shown = tab === "active" ? active : history;
 
   async function act(target: Row[], kind: "claim" | "exit") {
@@ -144,14 +148,14 @@ export default function Profile() {
           <div><dt>In Rounds</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
           <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
           <div>
-            <dt>Streak</dt>
+            <dt>Your calls</dt>
             <dd>
-              {streak.current > 0 ? `${streak.current} day${streak.current > 1 ? "s" : ""} in a row 🔥` : "—"}
-              {streak.best > streak.current && <span className="muted small"> · best {streak.best}</span>}
+              {calls.length > 0 ? `${right} right of ${calls.length}` : "—"}
+              {streak.current > 0 && <span className="muted small"> · {streak.current} day{streak.current > 1 ? "s" : ""} in a row</span>}
             </dd>
           </div>
         </dl>
-        <div className="promise-line small">Your money always comes back: stakes return on claim, plus prizes and yield.</div>
+        <div className="promise-line small">Your deposits always come back, right call or wrong.</div>
         {error && <div className="error small">{error}</div>}
       </div>
       <V1Balance />
@@ -216,7 +220,7 @@ export default function Profile() {
                       <PlayAgainButton small r={x.r} stake={x.stake} rounds={rounds} onDone={() => { refetchEntries(); refetchPrizes(); }} />
                     )}
                     {x.prize > 0n && (x.claimed || x.r.phase === 4) && (
-                      <ShareButton small id={x.r.id} text={`I won ${fmtToken(x.prize)} USD on Rounds and kept my deposit.`} />
+                      <ShareButton small id={x.r.id} text={`I called ${x.r.asset} ${x.r.thesis === 2 ? "down" : "up"}. Right, and won ${fmtToken(x.prize)} USD. My deposit never traded.`} />
                     )}
                     {x.r.phase === 1 && x.stake > 0n && (
                       <button className="btn small ghost" disabled={busy} onClick={() => act([x], "exit")}>

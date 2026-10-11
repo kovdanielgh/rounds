@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
   const [ex, ey] = pts[pts.length - 1].split(",").map(Number);
 
-  const headline = !d ? "Play the market." : d.prize > 0 ? `I won ${usd(d.prize)} USD` : "Money back.";
+  const headline = !d ? "Call it." : d.prize > 0 ? `I won ${usd(d.prize)} USD` : d.right ? "I called it." : "Money back.";
   const sub = !d
     ? "Keep your money."
     : d.prize > 0

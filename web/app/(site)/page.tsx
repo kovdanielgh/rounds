@@ -1,10 +1,13 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
 import MirrorCard from "@/components/MirrorCard";
 import { CardSkeleton } from "@/components/Skeletons";
 import WinnersFeed from "@/components/WinnersFeed";
 import VaultCard from "@/components/VaultCard";
-import { groupMirrors, useBlock, useRounds, type Item } from "@/hooks/useRounds";
+import { groupMirrors, useBlock, useRounds, type Item, type RoundView } from "@/hooks/useRounds";
+import { BLOCK_SECONDS } from "@/lib/config";
+import { fmtDuration } from "@/lib/format";
 import { useFlip } from "@/hooks/useFlip";
 import { usePopList } from "@/hooks/usePopList";
 
@@ -36,6 +39,15 @@ export default function Home() {
   };
   const ordered = [...shown].sort((a, b) => lengthOf(a) - lengthOf(b));
   const list = usePopList(ordered, itemKey, "open");
+  // First visit (not logged in): point at the round that finishes soonest, so the first result comes fast.
+  const { authenticated } = usePrivy();
+  const soonest = ordered
+    .flatMap((it) => (it.kind === "single" ? [it.r] : []))
+    .sort((a, b) => Number(a.end - b.end))[0];
+  const hintFor = (r: RoundView) =>
+    !authenticated && soonest?.id === r.id && block && r.end > block
+      ? `First time? This one ends in ${fmtDuration(Number(r.end - block) * BLOCK_SECONDS)}.`
+      : undefined;
   const grid = useFlip<HTMLDivElement>();
 
   return (
@@ -59,7 +71,7 @@ export default function Home() {
             {item.kind === "mirror" ? (
               <MirrorCard bull={item.bull} bear={item.bear} block={block} />
             ) : (
-              <VaultCard r={item.r} block={block} />
+              <VaultCard r={item.r} block={block} hint={hintFor(item.r)} />
             )}
             {popping && <Droplets bear={item.kind === "single" && item.r.thesis === 2} />}
           </div>

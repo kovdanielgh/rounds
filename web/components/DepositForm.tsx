@@ -22,6 +22,7 @@ function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
         Put in {amount ? fmtToken(amount) : 10}, get {amount ? fmtToken(amount) : 10} back either way.
         {prize !== undefined && prize > 0n ? ` Right call: share the ${fmtToken(prize)} ${TOKEN_SYMBOL} prize.` : ""}
       </p>
+      <p className="muted">Why free? It&apos;s testnet: we pay the prize to test the product. On mainnet, interest on all deposits pays it.</p>
       <p className="muted trust">
         Test money only ·{" "}
         <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>

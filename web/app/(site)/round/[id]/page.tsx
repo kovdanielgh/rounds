@@ -21,6 +21,14 @@ import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
 
+/** Price move from the start price, signed, as "+0.21%" / "−0.21%". */
+function movePct(r: RoundView) {
+  const live = r.finalPrice || r.price;
+  if (!r.strike || !live) return undefined;
+  const d = (Number(live) - Number(r.strike)) / Number(r.strike);
+  return { d, text: `${d >= 0 ? "+" : "−"}${Math.abs(d * 100).toFixed(2)}%` };
+}
+
 /** A settled round that nobody won: what happened, in one honest story. */
 function wrongStory(r: RoundView) {
   if (r.totalStake === 0n) return "Nobody played this round.";
@@ -76,7 +84,16 @@ export default function VaultPage() {
         <section>
           <div className="round-head">
             <h1>{r.asset} goes {bear ? "down" : "up"}?</h1>
-            <p className="muted">Round #{r.id.toString()} · {statusText(r, block)}</p>
+            <p className="muted">
+              Round #{r.id.toString()} ·{" "}
+              {(() => {
+                // While the round runs, talk about the player's call, not about "sides".
+                const m = movePct(r);
+                if (r.phase !== 2 || stake === 0n || !m || (block !== undefined && block >= r.end)) return statusText(r, block);
+                const right = bear ? m.d < 0 : m.d > 0;
+                return `Your call: ${bear ? "down" : "up"} · ${r.asset} ${m.text} · ${right ? "you're right so far" : "not yet"} · ${statusText(r, block).split(" · ").pop()}`;
+              })()}
+            </p>
           </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
@@ -153,6 +170,14 @@ export default function VaultPage() {
           )}
           {r.phase === 4 && stake > 0n && prize === 0n && (
             <p className="soft-landing">
+              {r.thesisWon ? (
+                <>
+                  <strong>Your call was right.</strong> {r.asset} {movePct(r)?.text ?? ""}. Not drawn this time
+                  {chanceIn > 1 ? ` (1 in ${chanceIn} chance)` : ""}.{" "}
+                </>
+              ) : (
+                <>Wrong call, nothing lost. </>
+              )}
               Your {fmtToken(stake)} {TOKEN_SYMBOL} {claimed ? "came back" : "is back"}.{" "}
               {next ? `Next round in ${statusText(next, block).replace("Open · closes in ", "")}.` : "A new round opens soon."}
             </p>
@@ -179,8 +204,10 @@ export default function VaultPage() {
                 id={r.id}
                 text={
                   prize > 0n
-                    ? `I won ${fmtToken(prize)} USD on Rounds and kept my deposit.`
-                    : `I was wrong about ${r.asset} and still got my ${fmtToken(stake)} USD back. Rounds.`
+                    ? `I called ${r.asset} ${bear ? "down" : "up"}. Right, and won ${fmtToken(prize)} USD. My deposit never traded.`
+                    : r.thesisWon
+                      ? `I called ${r.asset} ${bear ? "down" : "up"}. Right. My deposit never traded.`
+                      : `I was wrong about ${r.asset} and still got my ${fmtToken(stake)} USD back. Rounds.`
                 }
               />
             </div>

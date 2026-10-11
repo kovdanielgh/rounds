@@ -87,7 +87,14 @@ export default function ResultToasts() {
       {results.slice(0, 3).map(({ r, stake, prize }) => (
         <div key={r.id.toString()} className={`toast ${prize > 0n ? "won" : ""}`}>
           <div>
-            <strong>{prize > 0n ? `You won ${fmtToken(prize)} ${TOKEN_SYMBOL} 🎉` : `Your ${fmtToken(stake)} ${TOKEN_SYMBOL} is back`}</strong>
+            <strong>
+              {prize > 0n
+                ? `You won ${fmtToken(prize)} ${TOKEN_SYMBOL} 🎉`
+                : r.thesisWon
+                  ? "Your call was right"
+                  : `Your ${fmtToken(stake)} ${TOKEN_SYMBOL} is back`}
+            </strong>
+            {prize === 0n && r.thesisWon && <span className="small">Not drawn this time. Your {fmtToken(stake)} {TOKEN_SYMBOL} is back.</span>}
             <span className="muted small">{r.asset} {THESIS[r.thesis].toLowerCase()} · Round #{r.id.toString()}</span>
           </div>
           <Link href={`/round/${r.id}`} className="btn small" onClick={() => dismiss(r.id)}>Claim</Link>

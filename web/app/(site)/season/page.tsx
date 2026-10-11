@@ -12,7 +12,12 @@ export default function Season() {
   const { rounds, ready } = useRounds();
   const block = useBlock();
   const { address } = useAccount();
-  const { players, totalPrizes, totalKept, biggestWin, isLoading } = useSeason(rounds, block);
+  const { players, isLoading } = useSeason(rounds, block);
+  // Headline numbers count real players only: team wallets stay in the table, marked.
+  const real = players.filter((p) => !TEAM.includes(p.address.toLowerCase()));
+  const totalKept = real.reduce((s, p) => s + p.staked, 0n);
+  const totalPrizes = real.reduce((s, p) => s + p.prizes, 0n);
+  const biggestWin = real.reduce((m, p) => (p.best > m ? p.best : m), 0n);
   const me = address?.toLowerCase();
   const played = rounds.filter((r) => r.phase === 4 && r.count > 0).length;
 
@@ -51,9 +56,9 @@ export default function Season() {
             <thead>
               <tr>
                 <th>Player</th>
+                <th className="num">Right calls</th>
                 <th className="num">Kept safe</th>
                 <th className="num">Won</th>
-                <th className="num">Biggest win</th>
               </tr>
             </thead>
             <tbody>
@@ -67,9 +72,9 @@ export default function Season() {
                       {mine && <span className="tag small-tag">you</span>}
                       {team && <span className="tag bear small-tag">team</span>}
                     </td>
+                    <td className="num">{p.calls > 0 ? `${p.right} of ${p.calls}` : "—"}</td>
                     <td className="num">{fmtToken(p.staked)}</td>
                     <td className="num won">{p.prizes > 0n ? `+${fmtToken(p.prizes)}` : "—"}</td>
-                    <td className="num">{p.best > 0n ? fmtToken(p.best) : "—"}</td>
                   </tr>
                 );
               })}
