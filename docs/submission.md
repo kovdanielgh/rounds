@@ -103,6 +103,8 @@ We watched first-time users (Hotjar recordings, an in-app feedback form, direct 
 3. **Hotjar: people read with the mouse to understand the idea.** Too much text. Cards became one question ("BTC: up or down?"), one number (the prize) and one button.
 4. **A tester on Android found a rendering bug** (stale tiles behind animated cards). Heavy effects are now off on touch screens.
 
+From the Perpl team: *"I like this."* (Arich, Perpl team, on our post in the Perpl Discord;)
+
 The latest answer in the feedback form: clear what happens to the money: **Yes**, come back tomorrow: **Yes**, "User-friendly interface, quite transparent in use, I like it."
 
 ## Next step and target
