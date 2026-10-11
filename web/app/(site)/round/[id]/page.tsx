@@ -74,8 +74,10 @@ export default function VaultPage() {
     <main className="page vault">
       <div className="vault-grid">
         <section>
-          <h1>{r.asset} goes {bear ? "down" : "up"}?</h1>
-          <p className="muted">Round #{r.id.toString()} · {statusText(r, block)}</p>
+          <div className="round-head">
+            <h1>{r.asset} goes {bear ? "down" : "up"}?</h1>
+            <p className="muted">Round #{r.id.toString()} · {statusText(r, block)}</p>
+          </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
           </p>
@@ -104,6 +106,7 @@ export default function VaultPage() {
             <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {stake > 0n && <div><dt>You put in · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
+          {r.phase < 4 && <p className="muted small prize-how">If the call is right, 3 winners are drawn at random. A bigger deposit gives a bigger chance.</p>}
           {/* The worst case, told as a story: the call was wrong and it cost nothing. */}
           {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0") && <p className="prize-how wrong-story">{wrongStory(r)}</p>}
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}

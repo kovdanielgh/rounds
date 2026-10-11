@@ -10,7 +10,7 @@ const BEAR = "#ff2e88";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; address: string }> }) {
   const { id, address } = await params;
   const d = await readShare(id, address);
-  const bull = d?.side !== "Bears";
+  const bull = d?.side !== "Down";
   const color = bull ? ACID : BEAR;
 
   // Chart line: up for Bulls, down for Bears, ends at a dot.

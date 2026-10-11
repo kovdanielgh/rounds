@@ -29,7 +29,7 @@ export default function MirrorArt({ asset }: { asset: string }) {
   const toStr = (p: [number, number][]) => p.map((q) => q.join(",")).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="art" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${meta.name}: Bulls or Bears`}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="art" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${meta.name}: up or down`}>
       <defs>
         <linearGradient id={`bg-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#1c2840" />
@@ -72,9 +72,9 @@ export default function MirrorArt({ asset }: { asset: string }) {
       <circle cx={peak[0]} cy={peak[1]} r="6" fill="#f4f9ff" />
       <circle cx={peak[0]} cy={peak[1]} r="11" fill="none" stroke="#f4f9ff" strokeOpacity="0.35" />
 
-      <text x="20" y="30" fontSize="13" fill="var(--acid)" fontFamily="var(--font-mono)" letterSpacing="2">BULLS</text>
+      <text x="20" y="30" fontSize="13" fill="var(--acid)" fontFamily="var(--font-mono)" letterSpacing="2">UP</text>
       <text x={W - 20} y="30" fontSize="13" fill="var(--bear)" fontFamily="var(--font-mono)" letterSpacing="2" textAnchor="end">
-        BEARS
+        DOWN
       </text>
       <text x={W / 2} y="30" fontSize="13" fill="#9fb6d8" fontFamily="var(--font-mono)" letterSpacing="2" textAnchor="middle">
         {meta.name.toUpperCase()}

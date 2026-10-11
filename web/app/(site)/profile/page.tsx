@@ -59,7 +59,8 @@ function Result({ x, me }: { x: Row; me?: string }) {
     );
   return (
     <span className="yield">
-      <span className="muted">{x.r.phase < 4 ? "Yield so far" : "Money back"} · </span>+{fmtYield(x.earned)}
+      <span className="muted">{x.r.phase < 4 ? "In play" : "Money back"}</span>
+      {x.earned >= 10_000n && <> · +{fmtYield(x.earned)}</>}
     </span>
   );
 }
@@ -140,7 +141,7 @@ export default function Profile() {
       </h1>
       <div className="panel balances">
         <dl className="stats">
-          <div><dt>In Rounds (stakes, prizes, yield)</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
+          <div><dt>In Rounds</dt><dd>{balance === undefined ? <Line w={110} /> : `${fmtToken(balance, 4)} ${TOKEN_SYMBOL}`}</dd></div>
           <div><dt>Wallet</dt><dd>{wallet === undefined ? <Line w={110} /> : `${fmtToken(wallet)} ${TOKEN_SYMBOL}`}</dd></div>
           <div>
             <dt>Streak</dt>
@@ -185,9 +186,9 @@ export default function Profile() {
             <thead>
               <tr>
                 <th>Round</th>
-                <th>Status</th>
-                <th className="num">Stake</th>
-                <th className="num">Prize pool</th>
+                <th className="hide-sm">Status</th>
+                <th className="num hide-sm">Stake</th>
+                <th className="num hide-sm">Prize pool</th>
                 <th>Result</th>
                 <th />
               </tr>
@@ -201,9 +202,9 @@ export default function Profile() {
                       {x.r.asset} <span className="muted">#{x.r.id.toString()}</span>
                     </Link>
                   </td>
-                  <td className="muted">{x.stake === 0n && !x.claimed ? "Exited" : statusText(x.r, block)}</td>
-                  <td className="num">{x.stake === 0n ? "—" : fmtToken(x.stake)}</td>
-                  <td className="num">{fmtToken(x.r.pool)}</td>
+                  <td className="muted hide-sm">{x.stake === 0n && !x.claimed ? "Exited" : statusText(x.r, block)}</td>
+                  <td className="num hide-sm">{x.stake === 0n ? "—" : fmtToken(x.stake)}</td>
+                  <td className="num hide-sm">{fmtToken(x.r.pool)}</td>
                   <td><Result x={x} me={address} /></td>
                   <td className="action">
                     {x.r.phase === 4 && !x.claimed && x.stake > 0n && (

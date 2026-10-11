@@ -46,7 +46,7 @@ export const TOKEN_DECIMALS = 6;
 export const TOKEN_SYMBOL = "USD"; // AUSD on-chain, shown as USD
 export const BLOCK_SECONDS = 0.3; // measured on Monad testnet
 
-export const THESIS = ["None", "Bulls", "Bears"] as const; // the side, as users see it
+export const THESIS = ["None", "Up", "Down"] as const; // the side, as users see it: one word everywhere
 export const PHASE = ["None", "Open", "Closed", "Drawing", "Settled"] as const;
 
 /** Per-asset look and Perpl price decimals (price units = price * 10^priceDecimals). */

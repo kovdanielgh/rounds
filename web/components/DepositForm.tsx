@@ -19,7 +19,7 @@ function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
     <div className="money-path small">
       {/* One concrete example with the player's own numbers instead of an explanation. */}
       <p className="money-example">
-        Put in {amount ? fmtToken(amount) : 100}, get {amount ? fmtToken(amount) : 100} back either way.
+        Put in {amount ? fmtToken(amount) : 10}, get {amount ? fmtToken(amount) : 10} back either way.
         {prize !== undefined && prize > 0n ? ` Right call: share the ${fmtToken(prize)} ${TOKEN_SYMBOL} prize.` : ""}
       </p>
       <p className="muted trust">
@@ -64,7 +64,7 @@ export default function DepositForm({ id }: { id: bigint }) {
   const free = (data?.[2]?.result as bigint | undefined) ?? 0n;
   const entry = data?.[3]?.result;
   const stake = (entry as readonly [number, bigint, boolean, bigint, bigint] | undefined)?.[1] ?? 0n;
-  const side = r?.thesis === 2 ? "Bears" : "Bulls";
+  const side = r ? `${r.asset} ${r.thesis === 2 ? "down" : "up"}` : "your side";
 
   // The window closes by block, a few seconds before the phase read catches up: trust the block.
   const closed = !!r && (r.phase !== 1 || (block !== undefined && block > r.entryEnd));
@@ -81,7 +81,7 @@ export default function DepositForm({ id }: { id: bigint }) {
 
   // Deposit uses either the free balance in Rounds or the wallet, never both at once.
   const max = wallet > free ? wallet : free;
-  const suggested = !loaded || max >= 100n * ONE ? "100" : max >= ONE ? String(max / ONE) : "";
+  const suggested = !loaded || max >= 10n * ONE ? "10" : max >= ONE ? String(max / ONE) : ""; // small first step
   const value = amount ?? suggested;
   let amt = 0n;
   try {
@@ -131,7 +131,7 @@ export default function DepositForm({ id }: { id: bigint }) {
         : [
             // One-time permission for USD: every later deposit is a single signature.
             ...(allowance < amt
-              ? [{ label: "Enabling USD (once)…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
+              ? [{ label: "Allowing your USD, only once…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
               : []),
             { label: "Depositing…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [id, amt] } },
           ];
@@ -139,8 +139,6 @@ export default function DepositForm({ id }: { id: bigint }) {
       setAmount(null);
       setJustIn(true);
       refetch();
-      // Ask once, so the result can reach the player when the tab is in the background.
-      if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
     }
   }
 
@@ -188,7 +186,7 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="muted small">
         {tooMuch
           ? `You have ${fmtToken(max)} ${TOKEN_SYMBOL}. Try a smaller amount.`
-          : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} unused in Rounds` : ""}`}
+          : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free > 0n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} ready to play` : ""}`}
       </div>
       <MoneyPath amount={amt} prize={r?.livePool} />
       {error && <div className="error small" role="alert">{error}</div>}

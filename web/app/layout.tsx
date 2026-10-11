@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: { default: "Rounds · Call crypto up or down. Wrong? You get every dollar back.", template: "%s · Rounds" },
   description: "Call crypto up or down. Wrong? You get every dollar back. Right? You share a prize we pay for. A no-loss up/down market on Monad testnet.",
   applicationName: "Rounds",
-  keywords: ["no-loss", "prediction market", "Monad", "Perpl", "Bulls or Bears", "BTC", "testnet", "AUSD"],
+  keywords: ["no-loss", "prediction market", "Monad", "Perpl", "up or down", "BTC", "testnet", "AUSD"],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",

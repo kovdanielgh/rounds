@@ -18,7 +18,7 @@ function Side({ r, label }: { r: RoundView; label: string }) {
         {r.totalStake > 0n && <div><dt>Everyone put in</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>}
       </dl>
       <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
-        {r.phase === 1 ? `Go ${label}` : label}
+        {label}
       </Link>
     </div>
   );
@@ -33,8 +33,8 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
       <div className="mirror-art">
         <MirrorArt asset={bull.asset} />
         {/* left half opens the bull side, right half the bear side */}
-        <Link href={`/round/${bull.id}`} className="half-link left" aria-label={`Bulls · ${bull.asset}`} />
-        <Link href={`/round/${bear.id}`} className="half-link right" aria-label={`Bears · ${bear.asset}`} />
+        <Link href={`/round/${bull.id}`} className="half-link left" aria-label={`${bull.asset} up`} />
+        <Link href={`/round/${bear.id}`} className="half-link right" aria-label={`${bear.asset} down`} />
       </div>
       <div className="card-body">
         <div className="card-title">
@@ -47,8 +47,8 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
         </div>
         <div className="muted small status-line">{statusText(bull, block)}</div>
         <div className="sides">
-          <Side r={bull} label="Bulls" />
-          <Side r={bear} label="Bears" />
+          <Side r={bull} label="Up" />
+          <Side r={bear} label="Down" />
         </div>
       </div>
       <div className="bar half left"><i style={{ width: `calc((100% + 4px) * ${p.toFixed(5)})` }} /></div>

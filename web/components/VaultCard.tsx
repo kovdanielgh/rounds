@@ -15,11 +15,11 @@ export function statusText(r: RoundView, block?: bigint) {
   // The end block only allows settle; the round closes when the settle transaction lands.
   if (r.phase === 2) {
     if (block && block >= r.end) return "Settling…";
-    // "Live · BTC +0.12% · Bulls winning · 4m left"
+    // "Live · BTC +0.12% · Up winning · 4m left"
     if (r.strike && r.price) {
       const d = (Number(r.price) - Number(r.strike)) / Number(r.strike);
       const pct = `${d >= 0 ? "+" : "−"}${Math.abs(d * 100).toFixed(2)}%`;
-      return `Live · ${r.asset} ${pct} · ${d >= 0 ? "Bulls" : "Bears"} winning · ${left(r.end)} left`;
+      return `Live · ${r.asset} ${pct} · ${d >= 0 ? "Up" : "Down"} winning · ${left(r.end)} left`;
     }
     return `Live · ends in ${left(r.end)}`;
   }
@@ -30,9 +30,9 @@ export function statusText(r: RoundView, block?: bigint) {
   // The side the final price favoured. Same price as the start: nobody's side won.
   if (r.finalPrice && r.strike) {
     if (r.finalPrice === r.strike) return "Settled · no change";
-    return `Settled · ${r.finalPrice > r.strike ? "Bulls" : "Bears"} won`;
+    return `Settled · ${r.finalPrice > r.strike ? "Up" : "Down"} won`;
   }
-  return `Settled · ${(r.thesis === 1) === r.thesisWon ? "Bulls" : "Bears"} won`;
+  return `Settled · ${(r.thesis === 1) === r.thesisWon ? "Up" : "Down"} won`;
 }
 
 export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }) {

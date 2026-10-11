@@ -25,7 +25,7 @@ export default function Art({ asset, thesis, wide }: { asset: string; thesis: nu
   const [ex, ey] = pts[pts.length - 1];
 
   return (
-    <svg viewBox={`0 0 ${W} 220`} className="art" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${bull ? "Bulls" : "Bears"} · ${meta.name}`}>
+    <svg viewBox={`0 0 ${W} 220`} className="art" preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${bull ? "Up" : "Down"} · ${meta.name}`}>
       <defs>
         <linearGradient id={`bg-${id}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#1c2840" />

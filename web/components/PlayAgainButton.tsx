@@ -32,7 +32,7 @@ export default function PlayAgainButton({ r, stake, rounds, small, onDone }: {
     const ok = await run([
       { label: "Claiming…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "claim", args: [[r.id]] } },
       ...((allowance ?? 0n) < stake
-        ? [{ label: "Enabling USD (once)…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
+        ? [{ label: "Allowing your USD, only once…", tx: { chainId: CHAIN_ID, address: AUSD, abi: erc20Abi, functionName: "approve", args: [ROUNDS, maxUint256] } }]
         : []),
       { label: "Joining next round…", tx: { chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "depositAndEnter", args: [next!.id, stake] } },
     ] as Parameters<typeof run>[0]);

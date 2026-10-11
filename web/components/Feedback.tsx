@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { DISCORD_URL } from "@/lib/config";
 
-/** The window opens by itself after the 1st and the 5th deposit. The button opens it any time. */
+/** The window opens by itself after the 1st and the 5th result the player sees. The button opens it any time. */
 const ASK_AT = [1, 5];
-const key = (a?: string) => `rounds.deposits.${a?.toLowerCase() ?? "anon"}`;
+const key = (a?: string) => `rounds.results.${a?.toLowerCase() ?? "anon"}`;
 
 function count(a?: string) {
   try {
@@ -51,15 +51,15 @@ export default function Feedback() {
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
-    const onDeposit = (e: Event) => {
+    const onResult = (e: Event) => {
       const n = count((e as CustomEvent<string | undefined>).detail);
       setDeposits(n);
-      // Let "You're in" and the confetti play first.
-      if (ASK_AT.includes(n)) t = setTimeout(show, 2500);
+      // Let the result toast be read first.
+      if (ASK_AT.includes(n)) t = setTimeout(show, 4000);
     };
-    window.addEventListener("rounds:deposit", onDeposit);
+    window.addEventListener("rounds:result", onResult);
     return () => {
-      window.removeEventListener("rounds:deposit", onDeposit);
+      window.removeEventListener("rounds:result", onResult);
       clearTimeout(t);
     };
   }, []);

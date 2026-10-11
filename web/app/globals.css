@@ -2103,3 +2103,40 @@ a.connect.account {
   margin: 16px 0 0;
   overflow: visible;
 }
+
+/* ---- mobile: the point first (Krug: don't make me scroll to the point) ---- */
+@media (max-width: 800px) {
+  /* Round page: title and status, then the prize and the deposit button, then the chart and the rest. */
+  .vault-grid > section {
+    display: contents;
+  }
+
+  .vault-grid > section > * {
+    order: 2;
+  }
+
+  .vault-grid > section > .round-head {
+    order: 0;
+  }
+
+  .vault-grid > aside.panel {
+    order: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  /* The header scrolls away: two rows stuck on top take too much of a phone screen. */
+  .header {
+    position: static;
+  }
+
+  /* Toasts sit above the Feedback button, not on it. */
+  .toasts {
+    bottom: 56px;
+  }
+
+  /* Profile table: round, result, action. */
+  .table .hide-sm {
+    display: none;
+  }
+}

@@ -110,8 +110,8 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
         </defs>
 
         {/* zones */}
-        <text x={PAD.l + 4} y={PAD.t + 12} className="zone-label up">BULLS ZONE</text>
-        <text x={PAD.l + 4} y={bottom - 6} className="zone-label down">BEARS ZONE</text>
+        <text x={PAD.l + 4} y={PAD.t + 12} className="zone-label up">UP WINS</text>
+        <text x={PAD.l + 4} y={bottom - 6} className="zone-label down">DOWN WINS</text>
 
         {/* key moments */}
         {[
@@ -138,7 +138,7 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
         <rect x={W - PAD.r + 4} y={by - 11} width={PAD.r - 6} height={22} rx="5" className="strike-tag" />
         <text x={W - PAD.r + 4 + (PAD.r - 6) / 2} y={by + 4} className="strike-tag-text" textAnchor="middle">{fmt(base)}</text>
         <text x={W - PAD.r - 6} y={by - 6} className="strike-label" textAnchor="end">
-          {strikeV ? "start price" : "start price if entry closed now"}
+          {strikeV ? "start price" : "price now"}
         </text>
         {strikeV && <circle cx={x(atEntry.t)} cy={by} r="5" className="strike-dot" />}
 
@@ -150,14 +150,14 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
   );
 }
 
-/** "BTC is 0.12% above the start price. Bulls are winning." */
+/** "BTC is 0.12% above the start price. Up is winning." */
 export function chartCaption(r: RoundView) {
   const live = r.finalPrice || r.price;
   if (!r.strike || !live) return "The start price is set when entry closes. Until then, watch the price.";
   const diff = (Number(live) - Number(r.strike)) / Number(r.strike);
   const pct = `${Math.abs(diff * 100).toFixed(2)}%`;
   if (diff === 0) return `${r.asset} is exactly at the start price.`;
-  const side = diff > 0 ? "Bulls" : "Bears";
+  const side = diff > 0 ? "Up" : "Down";
   if (r.phase === 4) return `${r.asset} ended ${pct} ${diff > 0 ? "above" : "below"} the start price. ${side} won.`;
-  return `${r.asset} is ${pct} ${diff > 0 ? "above" : "below"} the start price. ${side} are winning.`;
+  return `${r.asset} is ${pct} ${diff > 0 ? "above" : "below"} the start price. ${side} is winning.`;
 }

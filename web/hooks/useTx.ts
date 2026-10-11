@@ -163,9 +163,6 @@ export function useTx() {
         const receipt = await client!.waitForTransactionReceipt({ hash });
         if (receipt.status === "reverted") throw new Error("Transaction reverted");
       }
-      // A deposit (not an approve) landed: the feedback window counts it (components/Feedback.tsx).
-      if (steps.some((s) => ["depositAndEnter", "enter"].includes(String((s.tx as { functionName?: string }).functionName))))
-        window.dispatchEvent(new CustomEvent("rounds:deposit", { detail: address }));
       setPhase("done");
       setStatus("Done ✓");
       timer.current = setTimeout(() => {

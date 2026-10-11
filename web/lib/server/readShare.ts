@@ -11,7 +11,7 @@ export type ShareData = {
   asset: string;
   assetName: string;
   glyph: string;
-  side: "Bulls" | "Bears";
+  side: "Up" | "Down";
   leverage: number;
   stake: number;
   prize: number;
@@ -39,7 +39,7 @@ export async function readShare(idParam: string, addressParam: string): Promise<
       asset,
       assetName: meta.name,
       glyph: meta.glyph,
-      side: round.thesis === 1 ? "Bulls" : "Bears",
+      side: round.thesis === 1 ? "Up" : "Down",
       leverage: leverageOf(round.marketId, round.leverage),
       stake: Number(formatUnits(entry[1], TOKEN_DECIMALS)),
       prize: Number(formatUnits(prize, TOKEN_DECIMALS)),
@@ -55,5 +55,5 @@ export const usd = (n: number) => n.toLocaleString("en-US", { maximumFractionDig
 export function shareText(d: ShareData) {
   return d.prize > 0
     ? `I won ${usd(d.prize)} USD on Rounds and kept my deposit.`
-    : `I played ${d.asset} with the ${d.side} on Rounds and kept my ${usd(d.stake)} USD deposit.`;
+    : `I called ${d.asset} ${d.side.toLowerCase()} on Rounds and kept my ${usd(d.stake)} USD deposit.`;
 }

@@ -47,6 +47,18 @@ export default function ResultToasts() {
     return [{ r, stake: e[1], prize }];
   });
 
+  // The feedback window asks after the 1st and the 5th result, not after a deposit: by then the
+  // player has seen what happens to the money (components/Feedback.tsx). Once per round.
+  useEffect(() => {
+    if (!address || !results.length) return;
+    const askedKey = `rounds-results-${address}`;
+    const asked = load(askedKey);
+    const fresh = results.map(({ r }) => r.id.toString()).filter((id) => !asked.includes(id));
+    if (!fresh.length) return;
+    save(askedKey, [...asked, ...fresh]);
+    window.dispatchEvent(new CustomEvent("rounds:result", { detail: address }));
+  }, [address, results]);
+
   // Browser notification once per round, only when the tab is in the background.
   useEffect(() => {
     if (!address || typeof Notification === "undefined" || Notification.permission !== "granted" || !document.hidden) return;
@@ -56,7 +68,7 @@ export default function ResultToasts() {
       const id = r.id.toString();
       if (notified.includes(id)) continue;
       new Notification(prize > 0n ? `You won ${fmtToken(prize)} USD` : `Your ${fmtToken(stake)} USD is back`, {
-        body: `${THESIS[r.thesis]} ${r.asset} · Round #${id}. Open Rounds to claim.`,
+        body: `${r.asset} ${THESIS[r.thesis].toLowerCase()} · Round #${id}. Open Rounds to claim.`,
       });
       notified.push(id);
     }
@@ -76,7 +88,7 @@ export default function ResultToasts() {
         <div key={r.id.toString()} className={`toast ${prize > 0n ? "won" : ""}`}>
           <div>
             <strong>{prize > 0n ? `You won ${fmtToken(prize)} ${TOKEN_SYMBOL} 🎉` : `Your ${fmtToken(stake)} ${TOKEN_SYMBOL} is back`}</strong>
-            <span className="muted small">{THESIS[r.thesis]} {r.asset} · Round #{r.id.toString()}</span>
+            <span className="muted small">{r.asset} {THESIS[r.thesis].toLowerCase()} · Round #{r.id.toString()}</span>
           </div>
           <Link href={`/round/${r.id}`} className="btn small" onClick={() => dismiss(r.id)}>Claim</Link>
           <button className="toast-x" onClick={() => dismiss(r.id)} aria-label="Dismiss">×</button>

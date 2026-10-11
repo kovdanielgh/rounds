@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const hook = process.env.FEEDBACK_WEBHOOK;
   if (hook) {
     const content = [
-      `**Feedback** after deposit #${f.deposits} · ${f.address || "no wallet"} · ${f.page}`,
+      `**Feedback** after result #${f.deposits} · ${f.address || "no wallet"} · ${f.page}`,
       `Clear what happens to the money: **${f.clear || "—"}**`,
       `Come back tomorrow: **${f.back || "—"}**`,
       `Annoyed: ${f.annoyed || "—"}`,

@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const image = `/share/${id}/${address}/image`;
   return {
     title: { absolute: title }, // a full sentence already: no "· Rounds" suffix
-    description: "Pick a side on BTC. Your money always comes back.",
+    description: "Call crypto up or down. Wrong? You get every dollar back.",
     openGraph: { title, images: [{ url: image, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", title, images: [image] },
   };
@@ -25,7 +25,7 @@ export default async function SharePage({ params }: Props) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="share-img" src={`/share/${id}/${address}/image`} alt={d ? shareText(d) : "Rounds"} width={1200} height={630} />
       <h1>{d ? shareText(d) : "Play the market. Keep your money."}</h1>
-      <p className="muted">Pick a side. If you are right, three players share the prize. If not, your money comes back.</p>
+      <p className="muted">Call crypto up or down. Right? You share a prize we pay for. Wrong? You get every dollar back.</p>
       <div className="row share-actions">
         <Link href="/" className="btn">Play a round</Link>
         {d && <Link href={`/round/${d.id}`} className="btn ghost">See round #{d.id}</Link>}

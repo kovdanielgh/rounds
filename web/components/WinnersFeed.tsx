@@ -2,63 +2,40 @@
 
 import Link from "next/link";
 import type { RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS, TEAM, THESIS, TOKEN_SYMBOL } from "@/lib/config";
+import { BLOCK_SECONDS, TEAM, TOKEN_SYMBOL } from "@/lib/config";
 import { fmtDuration, fmtToken, shortAddr } from "@/lib/format";
 
-const SHARES = [8000n, 1500n, 500n];
+const SHARES = [8000n, 1500n, 500n]; // 1st place gets SHARES[0]
 
 /**
- * Real wins only, read from settled rounds: winners and the pool are in the round data, so no extra
- * reads. Team wallets are marked. One quiet line that scrolls; it stops on hover.
+ * The latest finished round, one still line (no ticker: motion on the first screen is noise).
+ * A win shows the 1st place; a wrong call shows that the money went back. Team wallets are marked.
  */
 export default function WinnersFeed({ rounds, block }: { rounds: RoundView[]; block?: bigint }) {
-  const wins = rounds
-    .filter((r) => r.phase === 4 && r.thesisWon && !/^0x0+$/.test(r.winners[0]))
-    .sort((a, b) => Number(b.end - a.end))
-    .slice(0, 8)
-    .flatMap((r) =>
-      r.winners
-        .filter((w) => !/^0x0+$/.test(w))
-        .map((w, i) => ({ r, w, prize: (r.pool * SHARES[i]) / 10000n, place: i })),
-    )
-    .filter((x) => x.place === 0 || x.prize >= 1_000_000n) // keep the line short: 1st places and wins of 1 USD or more
-    .slice(0, 10);
-  // Wrong calls too: "being wrong cost nothing" is the point. Same line, sorted by time.
-  const wrong = rounds
-    .filter((r) => r.phase === 4 && !r.thesisWon && r.totalStake > 0n)
-    .sort((a, b) => Number(b.end - a.end))
-    .slice(0, 4);
-  if (!wins.length && !wrong.length) return null;
-  const ago = (r: RoundView) => (block && block > r.end ? `${fmtDuration(Number(block - r.end) * BLOCK_SECONDS)} ago` : "just now");
-  const items = wins.map(({ r, w, prize }) => (
-    <Link key={`${r.id}-${w}`} href={`/round/${r.id}`} className="win-item">
-      <span className="mono">{shortAddr(w)}</span>
-      {TEAM.includes(w.toLowerCase()) && <span className="muted"> (team)</span>} won{" "}
-      <b>
-        {fmtToken(prize)} {TOKEN_SYMBOL}
-      </b>{" "}
-      <span className="muted">
-        · {r.asset} {THESIS[r.thesis]} · {ago(r)}
-      </span>
-    </Link>
-  ));
-  const wrongItems = wrong.map((r) => (
-    <Link key={`w${r.id}`} href={`/round/${r.id}`} className="win-item">
-      Wrong call on {r.asset} · <b>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</b> went back{" "}
-      <span className="muted">· {ago(r)}</span>
-    </Link>
-  ));
-  const all = [...items, ...wrongItems];
+  const last = rounds
+    .filter((r) => r.phase === 4 && r.totalStake > 0n)
+    .sort((a, b) => Number(b.end - a.end))[0];
+  if (!last) return null;
+  const ago = block && block > last.end ? `${fmtDuration(Number(block - last.end) * BLOCK_SECONDS)} ago` : "just now";
+  const side = `${last.asset} ${last.thesis === 2 ? "down" : "up"}`;
+  const winner = last.thesisWon && !/^0x0+$/.test(last.winners[0]) ? last.winners[0] : undefined;
   return (
-    <div className="winners-feed" aria-label="Latest rounds">
-      <span className="winners-label">Latest rounds</span>
-      <div className="winners-track">
-        <div className="winners-row">
-          {all}
-          {/* second copy for a seamless loop */}
-          <span aria-hidden className="winners-copy">{all}</span>
-        </div>
-      </div>
-    </div>
+    <p className="winners-feed static">
+      <span className="winners-label">Latest round</span>
+      <Link href={`/round/${last.id}`} className="win-item">
+        {winner ? (
+          <>
+            <span className="mono">{shortAddr(winner)}</span>
+            {TEAM.includes(winner.toLowerCase()) && <span className="muted"> (team)</span>} won{" "}
+            <b>{fmtToken((last.pool * SHARES[0]) / 10000n)} {TOKEN_SYMBOL}</b> on {side}
+          </>
+        ) : (
+          <>
+            {side} was the wrong call · <b>{fmtToken(last.totalStake)} {TOKEN_SYMBOL}</b> went back
+          </>
+        )}{" "}
+        <span className="muted">· {ago}</span>
+      </Link>
+    </p>
   );
 }
