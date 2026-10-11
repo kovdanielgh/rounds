@@ -12,7 +12,6 @@ import ProgressBar from "@/components/ProgressBar";
 import { CardSkeleton, Line } from "@/components/Skeletons";
 import PlayAgainButton, { nextRoundOf } from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
-import { rolloverText } from "@/components/RolloverCorner";
 import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
@@ -71,7 +70,6 @@ export default function VaultPage() {
             <h1>{r.asset} · Round #{r.id.toString()}</h1>
           </div>
           <p className="muted">{statusText(r, block)}</p>
-          {isRollover(r.description) && <p className="muted small">{rolloverText(r)}.</p>}
           <div className="promise">
             <strong>Your money always comes back.</strong> Only the yield of the round plays.
           </div>
@@ -83,29 +81,35 @@ export default function VaultPage() {
             <PriceChart r={r} block={block} />
             {r.phase === 1 && <ProgressBar value={progressOf(r, block)} bearish={bear} />}
           </div>
-          <h2>Description</h2>
+          <h2>About this round</h2>
           <p>{r.description || "—"}</p>
-          <h2>Rules</h2>
-          <p>{r.rules || "—"}</p>
+          <details className="details">
+            <summary>Rules</summary>
+            <p>{r.rules || "—"}</p>
+          </details>
           <WhosIn r={r} />
-          <p className="muted small">
-            Your money always comes back. Only the yield of the round trades on Perpl. Your stake is locked from the
-            moment entry closes until the round ends, then one click sends it back with any prize.
-          </p>
         </section>
 
         <aside className="panel">
           <h2>Prize</h2>
           <dl className="stats col">
-            <div><dt>Prize pool{r.poolLive ? " · live estimate" : ""}</dt><dd><Pool r={r} /></dd></div>
-            {SHARES.map((s, i) => (
-              <div key={i}>
-                <dt>{["1st", "2nd", "3rd"][i]} place</dt>
-                <dd>{fmtToken((prizePool * s) / 10000n)} {TOKEN_SYMBOL}</dd>
-              </div>
-            ))}
-            {stake > 0n && <div><dt>Your stake · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
+            <div><dt>Total{r.poolLive ? " · live" : ""}</dt><dd><Pool r={r} /></dd></div>
+            <div><dt>Everyone put in · {r.count} {r.count === 1 ? "player" : "players"}</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
+            {/* Settled and nobody's side won: no places to show. */}
+            {!(r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")) &&
+              SHARES.map((s, i) => (
+                <div key={i}>
+                  <dt>{["1st", "2nd", "3rd"][i]} place</dt>
+                  <dd>{fmtToken((prizePool * s) / 10000n)} {TOKEN_SYMBOL}</dd>
+                </div>
+              ))}
+            {stake > 0n && <div><dt>You put in · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
           </dl>
+          <p className="muted small prize-how">
+            {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")
+              ? "Nobody won this round. Everyone got their own money back."
+              : `The prize is a bonus from Rounds${isRollover(r.description) ? " plus pools rolled in from earlier rounds" : ""}, plus interest on everyone's money. It trades on Perpl, so it grows or shrinks with the price. Three players win it. Everyone gets their own money back.`}
+          </p>
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
           <details className="details">
             <summary>Details</summary>
@@ -113,7 +117,6 @@ export default function VaultPage() {
               <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
               <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
               <div><dt>Leverage on Perpl</dt><dd>{leverageOf(r.marketId, r.leverage)}x</dd></div>
-              <div><dt>Total staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
               <div><dt>Base yield (everyone)</dt><dd>~2% a year</dd></div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>

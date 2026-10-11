@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import MirrorCard from "@/components/MirrorCard";
 import HowItWorks from "@/components/HowItWorks";
 import { CardSkeleton } from "@/components/Skeletons";
-import StatsBar from "@/components/StatsBar";
 import WinnersFeed from "@/components/WinnersFeed";
 import VaultCard from "@/components/VaultCard";
 import { groupMirrors, useBlock, useRounds, type Item } from "@/hooks/useRounds";
@@ -26,11 +24,10 @@ function Droplets({ bear }: { bear: boolean }) {
 }
 
 export default function Home() {
-  const [tab, setTab] = useState<"open" | "closed">("open");
   const { rounds, ready } = useRounds();
   const block = useBlock();
   const shown = groupMirrors(
-    rounds.filter((r) => (tab === "open" ? r.phase === 1 : r.phase > 1)),
+    rounds.filter((r) => r.phase === 1), // closed rounds live in the profile
   );
   // Cards that leave (entry window closed) pop like bubbles; the rest glide to their new place.
   // Quick rounds first, long ones (jackpots) last. Mirror pairs take a full row, so the order leaves no holes.
@@ -39,7 +36,7 @@ export default function Home() {
     return Number(r.end - r.start);
   };
   const ordered = [...shown].sort((a, b) => lengthOf(a) - lengthOf(b));
-  const list = usePopList(ordered, itemKey, tab);
+  const list = usePopList(ordered, itemKey, "open");
   const grid = useFlip<HTMLDivElement>();
 
   return (
@@ -47,14 +44,10 @@ export default function Home() {
       <section className="hero">
         <h1>Play the market. Keep your money.</h1>
         <HowItWorks />
-        <StatsBar rounds={rounds} ready={ready} />
+        {/* StatsBar is hidden until the numbers are worth showing (plan: "Скрыто до поры"). */}
         <WinnersFeed rounds={rounds} block={block} />
       </section>
-      <div className="tabs">
-        <button className={tab === "open" ? "active" : ""} onClick={() => setTab("open")}>Open rounds</button>
-        <button className={tab === "closed" ? "active" : ""} onClick={() => setTab("closed")}>Closed rounds</button>
-      </div>
-      {ready && shown.length === 0 && <p className="muted">No {tab} rounds right now. A new one opens soon.</p>}
+      {ready && shown.length === 0 && <p className="muted">No open rounds right now. A new one opens soon.</p>}
       {!ready && (
         <div className="grid">
           {[0, 1, 2].map((i) => <CardSkeleton key={i} />)}

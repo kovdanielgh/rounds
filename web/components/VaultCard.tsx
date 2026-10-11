@@ -6,8 +6,8 @@ import Art from "./Art";
 import Pool from "./Pool";
 import ProgressBar from "./ProgressBar";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS, THESIS, leverageOf, riskOf, isRoundOfDay, isJackpot, isRollover } from "@/lib/config";
-import { fmtDuration, fmtPrice } from "@/lib/format";
+import { TOKEN_SYMBOL, BLOCK_SECONDS, THESIS, leverageOf, riskOf, isRoundOfDay, isJackpot, isRollover } from "@/lib/config";
+import { fmtDuration, fmtToken } from "@/lib/format";
 
 export function statusText(r: RoundView, block?: bigint) {
   const left = (to: bigint) => (block && to > block ? fmtDuration(Number(to - block) * BLOCK_SECONDS) : "now");
@@ -51,16 +51,12 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
         <div className="muted small status-line">{statusText(r, block)}</div>
         <dl className="stats">
           <div>
-            <dt>Prize pool</dt>
+            <dt>Prize</dt>
             <dd><Pool r={r} /></dd>
           </div>
           <div>
-            <dt>Base APY</dt>
-            <dd>~2%</dd>
-          </div>
-          <div className="price-row">
-            <dt>Price now</dt>
-            <dd>{fmtPrice(r.price, r.asset)}</dd>
+            <dt>Everyone put in</dt>
+            <dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd>
           </div>
         </dl>
         {r.phase === 1 && <span className="btn small">Deposit</span>}

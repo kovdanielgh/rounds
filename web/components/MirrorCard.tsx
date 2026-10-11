@@ -7,15 +7,15 @@ import RolloverCorner from "./RolloverCorner";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
 import { TOKEN_SYMBOL, leverageOf, riskOf, isRoundOfDay, isJackpot } from "@/lib/config";
-import { fmtPrice, fmtToken } from "@/lib/format";
+import { fmtToken } from "@/lib/format";
 
 function Side({ r, label }: { r: RoundView; label: string }) {
   const bear = r.thesis === 2;
   return (
     <div className={`side ${bear ? "bear" : ""}`}>
       <dl className="stats col">
-        <div><dt>Prize pool</dt><dd><Pool r={r} /></dd></div>
-        <div><dt>Staked</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
+        <div><dt>Prize</dt><dd><Pool r={r} /></dd></div>
+        <div><dt>Everyone put in</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
       </dl>
       <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>
         {r.phase === 1 ? `Go ${label}` : label}
@@ -50,9 +50,6 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
           <span className="lev" title={`${leverageOf(bull.marketId, bull.leverage)}x on Perpl`}>{riskOf(leverageOf(bull.marketId, bull.leverage))}</span>
         </div>
         <div className="muted small status-line">{statusText(bull, block)}</div>
-        <div className="muted small status-line mono">
-          Price now {fmtPrice(bull.price, bull.asset)}
-        </div>
         <div className="sides">
           <Side r={bull} label="Bulls" />
           <Side r={bear} label="Bears" />

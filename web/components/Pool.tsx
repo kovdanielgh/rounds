@@ -15,7 +15,7 @@ export default function Pool({ r }: { r: RoundView }) {
       </span>
     );
   }
-  if (r.phase === 1 && r.poolLive && v > r.pool) {
+  if (r.phase === 1 && r.poolLive && v - r.pool >= 10_000n) { // show growth from 0.01 USD
     return (
       <span className="pool">
         {fmtToken(r.pool)} {TOKEN_SYMBOL} <span className="up small">+{fmtYield(v - r.pool)}</span>
