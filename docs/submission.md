@@ -6,7 +6,7 @@ Wrong call? Every dollar back. Call crypto up or down; right calls share a prize
 
 **Short description (one line):** Rounds is a no-loss up/down market on Monad: you pick up or down on BTC, only a prize pool trades on Perpl, and your deposit always comes back.
 
-Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/sava · Network: Monad testnet · Demo video: _add link_
+Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/rounds · Network: Monad testnet · Demo video: _add link_
 
 **Who pays the prize?** Today Rounds pays it as a launch budget. On mainnet, the interest on all deposits pays it.
 
@@ -73,6 +73,22 @@ Your deposit never trades. Only the prize pool does.
 - **Rollover:** in the hourly SOL series a won prize pool rolls into the next round and trades again, up to 3 in a row, then the big pool is drawn.
 - **Jackpot of the week** and **Round of the day:** habits for players who come back.
 - **An embeddable round for wallets:** one iframe, 10 lines of code. This is the B2B path after the first segment.
+
+## Traction so far (Monad testnet, 11 Oct)
+
+Counted from the contracts, team wallets excluded:
+
+- **89 rounds** created by the bots, **67 settled** on their own. No manual pricing, no manual settles.
+- **13 real positions opened on Perpl** by the contract (about 190 USD of prize pools traded, 3x–15x).
+- **5 real players, 14 entries, 351 USD** deposited. **Deposits lost: 0.**
+- Of the finished rounds with players, the called side was right in **8 of 14**.
+- First feedback came through the in-app form after deposits. The main lesson ("looks like a scam" from a first-time user) changed the whole site copy: one promise, who pays the prize, plain words.
+
+## Next step and target
+
+- **Next 2 weeks (judging):** Season 0 with traders from the Monad community, 3 tests with people who never saw the app, weekly fixes from the feedback form.
+- **Mainnet beta:** Aave AUSD as the yield source, a deposit cap, and a "no-loss mode" partnership with Perpl.
+- **Target for the first 60 days after mainnet:** 300 depositors, 100k AUSD in deposits, and deposits that stay after the third round as the main metric.
 
 ## Business model and go-to-market
 

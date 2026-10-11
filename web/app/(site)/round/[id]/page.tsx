@@ -35,6 +35,7 @@ function rulesOf(r: RoundView) {
     ...(isRollover(r.description) ? ["A win rolls the prize into the next round, up to 3 in a row. The third win is drawn."] : []),
     "Wrong call: everyone gets their whole deposit back.",
     "You can exit before entry closes.",
+    "Risks: testnet only. A smart-contract bug is the one way a deposit could be at risk. The prize is paid by Rounds.",
   ];
 }
 
