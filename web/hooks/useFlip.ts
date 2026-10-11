@@ -11,7 +11,8 @@ export function useFlip<T extends HTMLElement>() {
     const el = ref.current;
     if (!el) return;
     // Reduced motion: cards jump to the new place, no glide (the Web Animations API ignores CSS media queries).
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Touch screens too: some phone GPUs leave stale tiles behind moving cards.
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce), (hover: none)").matches;
     const next = new Map<string, { x: number; y: number }>();
     for (const child of Array.from(el.children) as HTMLElement[]) {
       const k = child.dataset.k;

@@ -65,8 +65,8 @@ export default function MirrorArt({ asset, wide }: { asset: string; wide?: boole
         {meta.glyph}
       </text>
 
-      <polyline points={toStr(left)} fill="none" stroke="var(--acid)" strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
-      <polyline points={toStr(right)} fill="none" stroke="var(--bear)" strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
+      <polyline className="glow" points={toStr(left)} fill="none" stroke="var(--acid)" strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
+      <polyline className="glow" points={toStr(right)} fill="none" stroke="var(--bear)" strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
       <polyline points={toStr(left)} fill="none" stroke="var(--acid)" strokeWidth="2.5" strokeLinejoin="round" />
       <polyline points={toStr(right)} fill="none" stroke="var(--bear)" strokeWidth="2.5" strokeLinejoin="round" />
       <circle cx={peak[0]} cy={peak[1]} r="6" fill="#f4f9ff" />

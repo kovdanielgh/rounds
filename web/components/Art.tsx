@@ -54,7 +54,7 @@ export default function Art({ asset, thesis, wide }: { asset: string; thesis: nu
       <text x="90" y="146" textAnchor="middle" fontSize="96" fontWeight="700" fill={`url(#chrome-${id})`}>
         {meta.glyph}
       </text>
-      <polyline points={line} fill="none" stroke={color} strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
+      <polyline className="glow" points={line} fill="none" stroke={color} strokeWidth="6" opacity="0.6" filter={`url(#blur-${id})`} />
       <polyline points={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />
       <circle cx={ex} cy={ey} r="5" fill={color} />
       <text x="20" y="30" fontSize="13" fill="#9fb6d8" fontFamily="var(--font-mono)" letterSpacing="2">

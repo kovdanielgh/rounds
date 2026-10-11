@@ -2151,3 +2151,26 @@ a.connect.account {
     white-space: normal;
   }
 }
+
+/* ---- touch screens: no heavy effects ----
+   Some phone GPUs (seen on Android) fail to repaint behind blur filters, backdrop blur and moving
+   cards and show stale tiles ("Up Up Up"). Phones get flat art and still cards; desktop is unchanged. */
+@media (hover: none) {
+  .art .glow {
+    display: none;
+  }
+
+  .header {
+    backdrop-filter: none;
+    background: var(--bg);
+  }
+
+  .card.shake,
+  .card.shake.hard,
+  .cell.popping,
+  .droplets span,
+  .navlink::after,
+  .connect:not(.account):hover {
+    animation: none !important;
+  }
+}
