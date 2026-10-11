@@ -94,6 +94,17 @@ Counted from the contracts, team wallets excluded:
 - Of the finished rounds with players, the called side was right in **8 of 14**.
 - First feedback came through the in-app form after deposits. The main lesson ("looks like a scam" from a first-time user) changed the whole site copy: one promise, who pays the prize, plain words.
 
+## Tested with real people, fixed what they hit
+
+We watched first-time users (Hotjar recordings, an in-app feedback form, direct messages) and changed the product after each finding:
+
+1. **"Why are there numbers in the corner?"** The header showed a wallet address. Now it shows the person's Google name or email (Privy), and the address only for wallet logins.
+2. **"How does it work? Looks like scam."** The site explained the mechanism instead of the promise. We cut everything else: one headline ("Wrong call? Every dollar back."), who pays the prize, the rules in plain words, one example at the deposit button.
+3. **Hotjar: people read with the mouse to understand the idea.** Too much text. Cards became one question ("BTC: up or down?"), one number (the prize) and one button.
+4. **A tester on Android found a rendering bug** (stale tiles behind animated cards). Heavy effects are now off on touch screens.
+
+The latest answer in the feedback form: clear what happens to the money: **Yes**, come back tomorrow: **Yes**, "User-friendly interface, quite transparent in use, I like it."
+
 ## Next step and target
 
 - **Next 2 weeks (judging):** Season 0 with traders from the Monad community, 3 tests with people who never saw the app, weekly fixes from the feedback form.
