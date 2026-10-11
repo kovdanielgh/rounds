@@ -4,6 +4,8 @@
 
 Rounds is a no-loss up/down market on Monad. You pick up or down on BTC. Every round has a prize pool, paid by Rounds today (on mainnet: the interest on all deposits). Only the pool trades, as a real position on Perpl, an on-chain order book. Right call: three players split the pool. Wrong call: you get your whole deposit back.
 
+**Who pays the prize?** Today Rounds pays it as a launch budget. On mainnet, the interest on all deposits pays it.
+
 > Live app: [saverounds.vercel.app](https://saverounds.vercel.app/) · Network: Monad testnet (chain 10143) · Demo video: _add link_
 
 ---

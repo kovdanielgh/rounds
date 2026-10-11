@@ -16,7 +16,7 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isYearLong, leverageOf, CHAIN_ID, ENGINE, addressUrl } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
@@ -83,7 +83,7 @@ export default function VaultPage() {
       <div className="vault-grid">
         <section>
           <div className="round-head">
-            <h1>{r.asset} goes {bear ? "down" : "up"}?</h1>
+            <h1>{r.asset} goes {bear ? "down" : "up"}{isYearLong(r) ? " in a year" : ""}?</h1>
             <p className="muted">
               Round #{r.id.toString()} ·{" "}
               {(() => {

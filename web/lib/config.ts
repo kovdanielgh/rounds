@@ -73,5 +73,7 @@ export const isRoundOfDay = (description: string) => description.startsWith("Rou
 export const isJackpot = (description: string) => description.startsWith("Jackpot");
 /** Rollover series: a won pool moves into the next round, drawn after MAX_RIDE_LEGS pools in a row. */
 export const isRollover = (description: string) => description.startsWith("Rollover");
+/** A round that lasts about a year (one-year BTC pair). */
+export const isYearLong = (r: { start: bigint; end: bigint }) => Number(r.end - r.start) * BLOCK_SECONDS > 300 * 86400;
 export const MAX_RIDE_LEGS = 3;
 

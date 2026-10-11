@@ -6,7 +6,7 @@ import { CardSkeleton } from "@/components/Skeletons";
 import WinnersFeed from "@/components/WinnersFeed";
 import VaultCard from "@/components/VaultCard";
 import { groupMirrors, useBlock, useRounds, type Item, type RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS } from "@/lib/config";
+import { BLOCK_SECONDS, isJackpot, isRoundOfDay, isYearLong } from "@/lib/config";
 import { fmtDuration } from "@/lib/format";
 import { useFlip } from "@/hooks/useFlip";
 import { usePopList } from "@/hooks/usePopList";
@@ -37,7 +37,10 @@ export default function Home() {
     const r = it.kind === "mirror" ? it.bull : it.r;
     return Number(r.end - r.start);
   };
-  const ordered = [...shown].sort((a, b) => lengthOf(a) - lengthOf(b));
+  // BTC up/down first: the reference market for the first segment (perp traders). Then quick rounds, long ones last.
+  const isBtcPair = (it: Item) =>
+    it.kind === "mirror" && it.bull.asset === "BTC" && !isYearLong(it.bull) && !isJackpot(it.bull.description) && !isRoundOfDay(it.bull.description);
+  const ordered = [...shown].sort((a, b) => Number(isBtcPair(b)) - Number(isBtcPair(a)) || lengthOf(a) - lengthOf(b));
   const list = usePopList(ordered, itemKey, "open");
   // First visit (not logged in): point at the round that finishes soonest, so the first result comes fast.
   const { authenticated } = usePrivy();

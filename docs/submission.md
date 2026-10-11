@@ -1,12 +1,14 @@
 # Rounds
 
-**Premium Bonds meets Polymarket, on Monad's on-chain order book.**
+**A no-loss up/down market on Monad's on-chain order book.**
 
 Call crypto up or down. Wrong? You get every dollar back. Right? You share a prize we pay for.
 
 **Short description (one line):** Rounds is a no-loss up/down market on Monad: you pick up or down on BTC, only a prize pool trades on Perpl, and your deposit always comes back.
 
 Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/sava · Network: Monad testnet · Demo video: _add link_
+
+**Who pays the prize?** Today Rounds pays it as a launch budget. On mainnet, the interest on all deposits pays it.
 
 ---
 
@@ -31,7 +33,7 @@ Your deposit never trades. Only the prize pool does.
 
 ## Category and alternatives
 
-**Category:** prize-linked savings, rebuilt on Monad's on-chain order book.
+**Category:** no-loss up/down market. Closest relatives: up/down prediction markets (you pick a side) and prize-linked savings (your deposit comes back).
 
 | What people use today | Good at | Where it falls short |
 |---|---|---|
@@ -41,7 +43,7 @@ Your deposit never trades. Only the prize pool does.
 | PoolTogether | deposit comes back | small prizes (about 2.5% a year), pure luck, no choice |
 | Premium Bonds (UK) | deposit comes back, state guarantee | UK only, no crypto, no choice of side |
 
-**Rounds:** the deposit comes back, the prize grows from a real position on Perpl, and the user picks a side. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 49 tests.
+**Rounds:** the user picks a side, the prize trades as a real position on Perpl, and the deposit always comes back. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 49 tests.
 
 ## Why Monad
 
@@ -62,13 +64,15 @@ Your deposit never trades. Only the prize pool does.
 
 - Rounds open automatically: quick SOL (rollover) and ZEC rounds every hour, a BTC Bulls vs Bears pair every 6 hours, the ETH Round of the day, a daily MON round and the weekly ETH jackpot.
 - Each round opens a real 3x–15x position on Perpl when entry closes and closes it at settle.
-- **Rollover:** in the hourly SOL series a won prize pool is not drawn. It rolls into the next round and trades again on Perpl, up to 3 rounds in a row, then the big pool is drawn. Rarer, bigger prizes from the same yield.
-- **Jackpot of the week:** the pool grows by 50 USD after every week nobody wins.
-- One-click claim: deposit, prize and yield go straight to the wallet.
-- A live price chart with the strike, and a live prize pool that moves with the price.
-- Season 0 leaderboard. Share cards: the card reads the prize from the contract, so nobody can fake it.
-- An embeddable round for wallets: one iframe, 10 lines of code.
 - No crypto needed to start: log in with email, and test USD plus a little MON for gas arrive by themselves.
+- One-click claim: deposit and prize go straight to the wallet.
+- A live price chart with the start price, and a prize that moves with the Perpl position.
+- Your call record ("7 right of 11") and a Season 0 leaderboard ranked by right calls. Share cards read the result from the contract, so nobody can fake it.
+
+**Also live, beyond the core** (extras for later segments, not what we lead with):
+- **Rollover:** in the hourly SOL series a won prize pool rolls into the next round and trades again, up to 3 in a row, then the big pool is drawn.
+- **Jackpot of the week** and **Round of the day:** habits for players who come back.
+- **An embeddable round for wallets:** one iframe, 10 lines of code. This is the B2B path after the first segment.
 
 ## Business model and go-to-market
 
@@ -87,7 +91,9 @@ Testnet only. The legal structure (prize-linked savings vs. a market) is under r
 - **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. Rollover and the growing jackpot already make prizes rarer and bigger. Options and Turbo come next.
 - **The testnet vault is a mock** with a fixed APR. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper (static aToken), with no change to the `Rounds` contract. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 
-## Next
+## Next (after the first segment)
+
+First segment: traders on Monad who make a market call every day and are tired of getting liquidated. Everything below comes after it.
 
 **Rounds is a platform, not one perp trade.** A new kind of round is usually a new engine adapter (`IEngine`), not a new contract. The engine decides what the yield of the round buys. The average prize stays the same. The shape changes: rarer, bigger prizes.
 

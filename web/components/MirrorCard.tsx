@@ -6,7 +6,7 @@ import Pool from "./Pool";
 import RolloverCorner from "./RolloverCorner";
 import { statusText } from "./VaultCard";
 import { progressOf, shakeOf, type RoundView } from "@/hooks/useRounds";
-import { TOKEN_SYMBOL, isRoundOfDay, isJackpot } from "@/lib/config";
+import { TOKEN_SYMBOL, isRoundOfDay, isJackpot, isYearLong } from "@/lib/config";
 import { fmtToken } from "@/lib/format";
 
 function Side({ r, label }: { r: RoundView; label: string }) {
@@ -38,7 +38,7 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
       </div>
       <div className="card-body">
         <div className="card-title">
-          <h3>{bull.asset}: up or down?</h3>
+          <h3>{bull.asset}{isYearLong(bull) ? " in a year" : ""}: up or down?</h3>
         </div>
         {/* Pills on their own row: the title stays centered on every screen. */}
         <div className="pills">
