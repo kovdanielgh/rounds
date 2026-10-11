@@ -27,7 +27,11 @@ export default function PriceChart({ r, block }: { r: RoundView; block?: bigint 
   const endT = timeOf(r.end);
   // Open: the whole life of the round, with a little history. Closed and later: fixed to the live phase.
   // At most one day of history before the round (long rounds would ask for weeks of candles).
-  const fromT = r.phase >= 2 ? entryT : startT - Math.min(86400, Math.max(300, Math.floor((endT - startT) * 0.1)));
+  // Live and later: a little history before the start price too, so a fresh round is not a vertical line.
+  const fromT =
+    r.phase >= 2
+      ? entryT - Math.min(3600, Math.floor((endT - entryT) * 0.15))
+      : startT - Math.min(86400, Math.max(300, Math.floor((endT - startT) * 0.1)));
   // Right edge: the round end. For long rounds (a week and more) that is too far to see anything,
   // so the view ends a bit after now and moments beyond it are not drawn.
   const LONG = 7 * 86400;

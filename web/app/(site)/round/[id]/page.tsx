@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { parseAbiItem } from "viem";
-import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import Confetti from "@/components/Confetti";
 import DepositForm from "@/components/DepositForm";
 import WhosIn from "@/components/WhosIn";
@@ -18,36 +16,10 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isRollover, isYearLong, leverageOf, CHAIN_ID, txUrl } from "@/lib/config";
+import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isRollover, isYearLong, leverageOf, CHAIN_ID } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
 const SHARES = [8000n, 1500n, 500n];
-
-const engineOpened = parseAbiItem("event EngineOpened(uint256 indexed id, uint256 margin)");
-
-/** The transaction that opened this round's Perpl position (the strike, right after entry closes). */
-function useOpenTx(r?: RoundView) {
-  const client = usePublicClient({ chainId: CHAIN_ID });
-  const [hash, setHash] = useState<`0x${string}`>();
-  const traded = !!r && r.strike > 0n && r.funded > 0n && (r.borrowed > 0n || r.phase >= 3);
-  const id = r?.id;
-  const from = r?.entryEnd;
-  useEffect(() => {
-    if (!client || !traded || id === undefined || from === undefined) return;
-    let alive = true;
-    // The strike lands a few blocks after entry closes (keeper), at most a few hundred later (owner fallback).
-    client
-      .getLogs({ address: ROUNDS, event: engineOpened, args: { id }, fromBlock: from, toBlock: from + 500n })
-      .then((logs) => {
-        if (alive && logs[0]) setHash(logs[0].transactionHash);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [client, traded, id, from]);
-  return hash;
-}
 
 /**
  * The rules in plain words, built from the round itself (the same for every round, old or new),
@@ -103,7 +75,6 @@ export default function VaultPage() {
   });
   const [, stake, claimed] = (mine?.[0] as readonly [number, bigint, boolean, bigint, bigint]) ?? [0, 0n, false];
   const prize = (mine?.[1] as bigint) ?? 0n;
-  const openTx = useOpenTx(r);
 
   if (!r)
     return (
@@ -181,20 +152,24 @@ export default function VaultPage() {
             <dl className="stats col">
               <div><dt>Start price (strike)</dt><dd>{fmtPrice(r.strike, r.asset)}</dd></div>
               <div><dt>{r.finalPrice ? "Final price" : "Price now"}</dt><dd>{fmtPrice(r.finalPrice || r.price, r.asset)}</dd></div>
-              <div><dt>Prize trade on Perpl</dt><dd>{isFixedPrize(r.marketId, r.leverage) ? "None: fixed prize" : `${leverageOf(r.marketId, r.leverage)}x`}</dd></div>
+              <div>
+                <dt>Prize trade on Perpl</dt>
+                <dd>
+                  {isFixedPrize(r.marketId, r.leverage)
+                    ? "None: fixed prize"
+                    : r.phase === 2 && r.strike > 0n && r.borrowed === 0n
+                      ? `None this round: another round holds the ${r.asset} position. The prize stays fixed.`
+                      : `${leverageOf(r.marketId, r.leverage)}x`}
+                </dd>
+              </div>
               <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
             </dl>
-            {/* Only once a real position exists: a direct link to the transaction that opened it. */}
-            {openTx && (
-              <p className="small">
-                <a className="tx-link" href={txUrl(openTx)} target="_blank" rel="noreferrer">The Perpl position for this round ↗</a>
-              </p>
-            )}
           </details>
 
           {r.phase === 1 && <DepositForm id={r.id} />}
-          {r.phase !== 1 && stake === 0n && (
-            <Link href="/" className="btn wide">See open rounds</Link>
+          {/* After entry: always a way back to the open rounds (players wait here too). */}
+          {(r.phase === 2 || r.phase === 3 || (r.phase === 4 && (stake === 0n || claimed))) && (
+            <Link href="/" className={`btn wide ${stake > 0n ? "ghost" : ""}`}>See open rounds</Link>
           )}
 
           {r.phase === 1 && stake > 0n && (
