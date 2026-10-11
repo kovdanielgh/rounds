@@ -14,7 +14,7 @@ function Side({ r, label }: { r: RoundView; label: string }) {
   return (
     <div className={`side ${bear ? "bear" : ""}`}>
       <dl className="stats col">
-        <div><dt>Prize</dt><dd><Pool r={r} /></dd></div>
+        <div><dt>Prize · by Rounds</dt><dd><Pool r={r} /></dd></div>
         <div><dt>Everyone put in</dt><dd>{fmtToken(r.totalStake)} {TOKEN_SYMBOL}</dd></div>
       </dl>
       <Link href={`/round/${r.id}`} className={`btn small ${bear ? "bear" : ""}`}>

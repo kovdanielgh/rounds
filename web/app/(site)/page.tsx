@@ -1,7 +1,7 @@
 "use client";
 
 import MirrorCard from "@/components/MirrorCard";
-import HowItWorks from "@/components/HowItWorks";
+import MoneyBoxes from "@/components/MoneyBoxes";
 import { CardSkeleton } from "@/components/Skeletons";
 import WinnersFeed from "@/components/WinnersFeed";
 import VaultCard from "@/components/VaultCard";
@@ -42,8 +42,9 @@ export default function Home() {
   return (
     <main className="page">
       <section className="hero">
-        <h1>Play the market. Keep your money.</h1>
-        <HowItWorks />
+        <h1>Call the market. Your deposit never trades.</h1>
+        <p className="hero-sub">Pick up or down. Every round has a prize pool, paid by Rounds. Only the pool trades.</p>
+        <MoneyBoxes />
         {/* StatsBar is hidden until the numbers are worth showing (plan: "Скрыто до поры"). */}
         <WinnersFeed rounds={rounds} block={block} />
       </section>

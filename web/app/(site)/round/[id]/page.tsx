@@ -71,7 +71,7 @@ export default function VaultPage() {
           </div>
           <p className="muted">{statusText(r, block)}</p>
           <div className="promise">
-            <strong>Your money always comes back.</strong> Only the prize is traded, never your deposit.
+            <strong>Your deposit never trades.</strong> Only the prize pool, paid by Rounds, trades on Perpl.
           </div>
           <p className={`chart-caption ${r.strike && (r.finalPrice || r.price) ? ((r.finalPrice || r.price)! > r.strike ? "up" : "down") : ""}`}>
             {chartCaption(r)}
@@ -108,7 +108,7 @@ export default function VaultPage() {
           <p className="muted small prize-how">
             {r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")
               ? "Nobody won this round. Everyone got their own money back."
-              : `The prize is a bonus from Rounds${isRollover(r.description) ? " plus pools rolled in from earlier rounds" : ""}, plus interest on everyone's money. It trades on Perpl, so it grows or shrinks with the price. Three players win it. Everyone gets their own money back.`}
+              : `Paid by Rounds${isRollover(r.description) ? ", plus pools rolled in from earlier rounds" : ""}. Later also the interest on all deposits. The pool trades on Perpl, so it grows or shrinks with the price. Right call: 3 players split it. Everyone gets their deposit back.`}
           </p>
           {/* Technical numbers live here, out of the way (dictionary: strike, leverage only in Details). */}
           <details className="details">

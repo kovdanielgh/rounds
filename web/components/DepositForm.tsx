@@ -10,18 +10,16 @@ import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl, addressUrl
 import { fmtToken } from "@/lib/format";
 import { useBlock, useRounds } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
+import MoneyBoxes from "./MoneyBoxes";
 
 const PRESETS = [10, 50, 100];
 
-/** Where the money goes, at the moment of doubt: right under the button. Plain words, no "yield". */
+/** Where the money goes, at the moment of doubt: right under the button. */
 function MoneyPath({ amount, prize }: { amount?: bigint; prize?: bigint }) {
   return (
     <div className="money-path small">
-      <p>
-        <strong>Your {amount ? `${fmtToken(amount)} ` : ""}{TOKEN_SYMBOL} stays yours.</strong> It sits in the Rounds contract in your
-        name and goes back to your wallet when the round ends. You can also take it out before entry closes.
-      </p>
-      <p className="muted">Only the {prize !== undefined ? `${fmtToken(prize)} ${TOKEN_SYMBOL} ` : ""}prize is traded, never your money.</p>
+      <MoneyBoxes amount={amount} prize={prize} />
+      <p className="muted">Not sure? Put in 10 {TOKEN_SYMBOL} and exit before entry closes: it comes straight back.</p>
       <p className="muted trust">
         Test money only ·{" "}
         <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Open, verified contract ↗</a>

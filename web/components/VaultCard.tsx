@@ -51,7 +51,7 @@ export default function VaultCard({ r, block }: { r: RoundView; block?: bigint }
         <div className="muted small status-line">{statusText(r, block)}</div>
         <dl className="stats">
           <div>
-            <dt>Prize</dt>
+            <dt>Prize · by Rounds</dt>
             <dd><Pool r={r} /></dd>
           </div>
           <div>

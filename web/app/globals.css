@@ -1916,9 +1916,6 @@ body {
   margin: 0;
 }
 
-.money-path strong {
-  color: var(--acid);
-}
 
 .money-path .trust {
   font-size: 12px;
@@ -1939,9 +1936,6 @@ body {
   margin: 0;
 }
 
-.money-path strong {
-  color: var(--acid);
-}
 
 .money-path .trust {
   font-size: 12px;
@@ -1952,4 +1946,61 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
+}
+
+/* Two boxes: the deposit (never trades) and the prize pool (the only thing that trades). */
+.hero-sub {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.money-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0 0;
+  max-width: 640px;
+}
+
+.money-path .money-boxes {
+  margin: 0;
+  grid-template-columns: 1fr;
+}
+
+.money-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--chrome-2);
+}
+
+.money-box.safe {
+  border-color: rgba(214, 228, 245, 0.35);
+}
+
+.money-box.pool {
+  border-color: rgba(182, 255, 26, 0.45);
+  background: rgba(182, 255, 26, 0.05);
+}
+
+.money-box.pool strong {
+  color: var(--acid);
+}
+
+.money-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .money-boxes {
+    grid-template-columns: 1fr;
+  }
 }

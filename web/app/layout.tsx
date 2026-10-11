@@ -11,16 +11,16 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://saverounds.vercel.app"),
   // Pages set a short title ("Round #12", "Profile"); the template adds the brand.
-  title: { default: "Rounds · Play the market. Keep your money.", template: "%s · Rounds" },
-  description: "Pick Bulls or Bears. Only the yield trades on Perpl; your money always comes back. Testnet on Monad.",
+  title: { default: "Rounds · Call the market. Your deposit never trades.", template: "%s · Rounds" },
+  description: "A no-loss prediction market on Monad. Pick up or down. Only a prize pool paid by Rounds trades on Perpl; your deposit never trades and always comes back. Testnet.",
   applicationName: "Rounds",
-  keywords: ["no-loss", "prize-linked savings", "Monad", "Perpl", "Bulls or Bears", "BTC", "testnet", "AUSD"],
+  keywords: ["no-loss", "prediction market", "Monad", "Perpl", "Bulls or Bears", "BTC", "testnet", "AUSD"],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Rounds",
-    title: "Rounds · Play the market. Keep your money.",
-    description: "Pick Bulls or Bears. Your money always comes back.",
+    title: "Rounds · Call the market. Your deposit never trades.",
+    description: "Pick up or down. Only the prize pool trades. Your deposit always comes back.",
   },
   twitter: { card: "summary_large_image" },
 };
