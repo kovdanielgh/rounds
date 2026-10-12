@@ -59,6 +59,8 @@ export default function Home() {
         <h1>
           Wrong call? <span className="hero-accent">Every dollar back.</span>
         </h1>
+        {/* The one comparison that made first-time testers get it. */}
+        <p className="hero-why">Like a savings account: instead of interest, you get a chance at a prize.</p>
         {/* StatsBar is hidden until the numbers are worth showing (plan: "Скрыто до поры"). */}
         <WinnersFeed rounds={rounds} block={block} />
       </section>

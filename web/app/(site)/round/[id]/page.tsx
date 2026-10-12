@@ -123,14 +123,14 @@ export default function VaultPage() {
           </div>
           <h2>About this round</h2>
           <p>{r.description || "—"}</p>
-          <details className="details">
-            <summary>Rules</summary>
+          <h2>Rules</h2>
+          <div>
             <ul className="rules">
               {rulesOf(r).map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>
-          </details>
+          </div>
           <WhosIn r={r} />
         </section>
 

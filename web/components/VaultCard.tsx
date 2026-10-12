@@ -39,7 +39,9 @@ export default function VaultCard({ r, block, hint }: { r: RoundView; block?: bi
   const bear = r.thesis === 2;
   return (
     <Link href={`/round/${r.id}`} className={`card ${shakeOf(r, block)} ${r.phase === 4 ? "done" : ""}`}>
-      <Art asset={r.asset} thesis={r.thesis} />
+      {/* Narrow art in the grid, wide art when the card takes the full width (phones): lower, never cropped. */}
+      <span className="art-narrow"><Art asset={r.asset} thesis={r.thesis} /></span>
+      <span className="art-wide"><Art asset={r.asset} thesis={r.thesis} wide /></span>
       <RolloverCorner r={r} />
       <div className="card-body">
         <div className="card-title">

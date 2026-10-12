@@ -16,6 +16,7 @@ export default function Header() {
           <Link href="/" className={`navlink ${path === "/" ? "active" : ""}`}>Rounds</Link>
           <Link href="/season" className={`navlink ${path === "/season" ? "active" : ""}`}>Season</Link>
           <Link href="/profile" className={`navlink ${path === "/profile" ? "active" : ""}`}>Profile</Link>
+          <Link href="/how" className={`navlink ${path === "/how" ? "active" : ""}`}>How it works</Link>
         </nav>
         <FaucetButton />
         <ConnectButton />

@@ -2174,3 +2174,65 @@ a.connect.account {
     animation: none !important;
   }
 }
+
+/* The "why" under the headline */
+.hero-why {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* How it works */
+.how > * {
+  max-width: 720px; /* readable lines, aligned with the menu like every page */
+}
+
+.how-steps {
+  margin: 24px 0;
+  padding-left: 22px;
+  line-height: 1.6;
+}
+
+.how-steps li {
+  margin-bottom: 12px;
+}
+
+/* Phones: smaller cards, so more rounds fit on one screen. */
+@media (max-width: 640px) {
+  .card-body {
+    padding: 12px 14px 16px;
+  }
+
+  .card-title h3 {
+    font-size: 18px;
+  }
+
+  .card .stats {
+    margin: 8px 0;
+  }
+
+  .header nav {
+    gap: 12px;
+    font-size: 13px;
+  }
+}
+
+/* Single cards: narrow art in the grid, wide art on phones (full-width card, lower, not cropped). */
+.art-wide {
+  display: none;
+}
+
+.art-narrow,
+.art-wide {
+  line-height: 0;
+}
+
+@media (max-width: 640px) {
+  .art-narrow {
+    display: none;
+  }
+
+  .art-wide {
+    display: block;
+  }
+}

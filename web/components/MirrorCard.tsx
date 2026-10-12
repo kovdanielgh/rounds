@@ -41,10 +41,12 @@ export default function MirrorCard({ bull, bear, block }: { bull: RoundView; bea
           <h3>{bull.asset}{isYearLong(bull) ? " in a year" : ""}: up or down?</h3>
         </div>
         {/* Pills on their own row: the title stays centered on every screen. */}
-        <div className="pills">
-          {isRoundOfDay(bull.description) && <span className="pill day">☀ Round of the day</span>}
-          {isJackpot(bull.description) && <span className="pill jackpot">🏆 Jackpot · grows every week nobody wins</span>}
-        </div>
+        {(isRoundOfDay(bull.description) || isJackpot(bull.description)) && (
+          <div className="pills">
+            {isRoundOfDay(bull.description) && <span className="pill day">☀ Round of the day</span>}
+            {isJackpot(bull.description) && <span className="pill jackpot">🏆 Jackpot · grows every week nobody wins</span>}
+          </div>
+        )}
         <div className="muted small status-line">{statusText(bull, block)}</div>
         <div className="sides">
           <Side r={bull} label="Up" />
