@@ -2277,3 +2277,38 @@ a.connect.account {
     display: inline;
   }
 }
+
+/* Phones: "Log in" never shrinks or wraps; the menu gives way and scrolls sideways if it must. */
+.connect {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .header-in {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .header nav {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .header nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .connect:not(.account) {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .header nav {
+    gap: 10px;
+    font-size: 12px;
+  }
+}
