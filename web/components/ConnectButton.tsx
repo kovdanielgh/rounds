@@ -12,6 +12,13 @@ export function useDisplayName() {
   return user?.google?.name || user?.google?.email || user?.email?.address || shortAddr(address) || "Account";
 }
 
+/** "Daniel Krasilnikoff" -> "DK", "kopx@free.fr" -> "K", "0xB297…E7Fe" stays as it is. */
+function initials(name: string) {
+  if (name.startsWith("0x")) return name;
+  const words = name.split("@")[0].split(/[\s._-]+/).filter(Boolean);
+  return words.slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || name.slice(0, 1).toUpperCase();
+}
+
 export default function ConnectButton() {
   const { ready, authenticated, login } = usePrivy();
   const name = useDisplayName();
@@ -19,8 +26,10 @@ export default function ConnectButton() {
   if (!authenticated) return <button className="connect" onClick={login}>Log in</button>;
   // Opens the profile; logging out lives there, so one click never logs anyone out by accident.
   return (
-    <Link href="/profile" className="connect account" title="Your profile">
-      {name}
+    <Link href="/profile" className="connect account" title={name}>
+      <span className="name-full">{name}</span>
+      {/* Phones: initials only, so the menu never gets squeezed by a long name. */}
+      <span className="name-short">{initials(name)}</span>
     </Link>
   );
 }

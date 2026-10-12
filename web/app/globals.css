@@ -2236,3 +2236,37 @@ a.connect.account {
     display: block;
   }
 }
+
+/* Header: the menu never shrinks; the account name gives way instead. */
+.header nav {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+a.connect.account {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.name-short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .header-in {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  a.connect.account {
+    justify-self: end;
+    max-width: 100%;
+  }
+
+  .connect.account .name-full {
+    display: none;
+  }
+
+  .connect.account .name-short {
+    display: inline;
+  }
+}
