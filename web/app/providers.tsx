@@ -9,10 +9,14 @@ import { chain, PRIVY_APP_ID } from "@/lib/config";
 
 const queryClient = new QueryClient();
 // All reads of a render go out as one multicall in one JSON-RPC batch: fewer requests, fewer failures.
+// The public Monad RPC allows 15 requests per second. viem cuts a multicall into 1 KB chunks by
+// default, and ~90 rounds made dozens of requests per refresh, so all of them failed. 128 KB chunks:
+// one request for the whole page.
+const MULTICALL_BYTES = 131_072;
 const wagmiConfig = createConfig({
   chains: [chain],
   transports: { [chain.id]: http(undefined, { batch: true }) },
-  batch: { multicall: true },
+  batch: { multicall: { batchSize: MULTICALL_BYTES } },
 });
 
 /**
