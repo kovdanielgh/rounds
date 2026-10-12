@@ -146,9 +146,16 @@ p {
   box-shadow: 0 0 8px var(--acid);
 }
 
-.navlink:hover::after,
 .navlink.active::after {
   transform: scaleX(1);
+}
+
+/* Hover underline only with a real mouse: on phones a tapped link keeps :hover (and keeps it on the
+   page restored by Back), so two links looked active. */
+@media (hover: hover) {
+  .navlink:hover::after {
+    transform: scaleX(1);
+  }
 }
 
 .navlink:disabled {
