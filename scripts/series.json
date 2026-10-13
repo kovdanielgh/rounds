@@ -2,6 +2,31 @@
   "_comment": "Each series keeps one open round (or pair). When its entry window closes, the scheduler opens the next one. Blocks: ~0.3 s on Monad testnet (1 h = 12000). Keep durationBlocks a bit below entryBlocks, so the previous position on the same market is closed before the next one opens. endAtUtc: the round always ends at this UTC time (Round of the day); entry is open until durationBlocks before it. endDow: day of week for endAtUtc (0 = Sunday). waitSettle: open the next round only after the previous one settled. jackpot: bonus starts at base, grows by step (up to max) after a round nobody won, resets after a win. ride: rollover. If a round wins, its pot moves into the next round of the series instead of a draw; the contract draws after 3 pots in a row (maxRideLegs).",
   "series": [
     {
+      "name": "demo-eth",
+      "entryBlocks": 600,
+      "durationBlocks": 400,
+      "rounds": [
+        {
+          "asset": "ETH",
+          "marketId": 32,
+          "thesis": 1,
+          "leverage": 12,
+          "bonus": 2000000,
+          "description": "Demo round: ETH goes up in 2 minutes. A short round to try Rounds and record a demo.",
+          "rules": "Start price: the Perpl price when entry closes. Final: the price 2 minutes later. Your money always comes back."
+        },
+        {
+          "asset": "ETH",
+          "marketId": 32,
+          "thesis": 2,
+          "leverage": 12,
+          "bonus": 2000000,
+          "description": "Demo round: ETH goes down in 2 minutes. A short round to try Rounds and record a demo.",
+          "rules": "Start price: the Perpl price when entry closes. Final: the price 2 minutes later. Your money always comes back."
+        }
+      ]
+    },
+    {
       "name": "round-of-the-day",
       "endAtUtc": "18:00",
       "durationBlocks": 23841,
@@ -129,6 +154,23 @@
           "bonus": 100000000,
           "description": "Jackpot of the week: ETH by Sunday 20:00 UTC. Down side.",
           "rules": "Start price: Perpl price when entry closes (Sunday 19:00 UTC). Final: price at Sunday 20:00 UTC. Your side right: three players share the jackpot (80/15/5). Nobody wins: the jackpot grows by 50 USD next week. Your money always comes back."
+        }
+      ]
+    },
+    {
+      "name": "month-sol",
+      "entryBlocks": 288000,
+      "durationBlocks": 8640000,
+      "waitSettle": true,
+      "rounds": [
+        {
+          "asset": "SOL",
+          "marketId": 48,
+          "thesis": 2,
+          "leverage": 3,
+          "bonus": 50000000,
+          "description": "Month round: SOL goes down in 30 days? Entry is open for a day, then the round runs for a month. The longer it runs, the more interest goes into the prize.",
+          "rules": "Start price: the Perpl price when entry closes. Final: the price 30 days later. Below the start price: down wins. Your money always comes back."
         }
       ]
     }

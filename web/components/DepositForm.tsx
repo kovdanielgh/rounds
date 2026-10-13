@@ -6,19 +6,35 @@ import { maxUint256, parseUnits } from "viem";
 import { useAccount, useReadContracts } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { erc20Abi, roundsAbi } from "@/lib/abi";
-import { AUSD, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl, addressUrl } from "@/lib/config";
-import { fmtToken } from "@/lib/format";
-import { useBlock, useRounds } from "@/hooks/useRounds";
+import { AUSD, BASE_APR_BPS, BLOCK_SECONDS, ROUNDS, TOKEN_DECIMALS, TOKEN_SYMBOL, CHAIN_ID, txUrl, addressUrl } from "@/lib/config";
+import { fmtDuration, fmtToken } from "@/lib/format";
+import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 
 const PRESETS = [10, 50, 100];
 
 /** Where the money goes, at the moment of doubt: one example and the contract to check it. */
-function MoneyPath({ amount }: { amount?: bigint }) {
-  const n = amount ? fmtToken(amount) : "10";
+/**
+ * One example with the player's own numbers: the deposit comes back either way, plus the base yield
+ * it earns until the round ends (the money is locked until then).
+ */
+function MoneyPath({ amount, r, block }: { amount?: bigint; r?: RoundView; block?: bigint }) {
+  const amt = amount && amount > 0n ? amount : 10n * 10n ** BigInt(TOKEN_DECIMALS);
+  const secs = r && block && r.end > block ? Number(r.end - block) * BLOCK_SECONDS : 0;
+  const base = (amt * BigInt(BASE_APR_BPS) * BigInt(Math.round(secs))) / (10_000n * 31_536_000n);
+
   return (
     <div className="money-path small">
-      <p className="money-example">Put in {n}, get {n} back either way.</p>
+      <p className="money-example">
+        Put in {fmtToken(amt)}, get {fmtToken(amt)}
+        {base >= 10_000n ? ` + ${fmtToken(base)}` : ""} back either way.
+      </p>
+      {secs > 0 && (
+        <p className="muted">
+          Locked for {fmtDuration(secs)}, until the round ends (you can exit before entry closes). Base yield{" "}
+          {(BASE_APR_BPS / 100).toFixed(2)}% a year.
+        </p>
+      )}
       <p className="small">
         <a href={addressUrl(ROUNDS)} target="_blank" rel="noopener noreferrer" className="link">Verified contract ↗</a>
       </p>
@@ -70,7 +86,7 @@ export default function DepositForm({ id }: { id: bigint }) {
       <div className="deposit">
         <button className="btn wide" onClick={login}>Log in to play</button>
         <p className="muted small deposit-note">Log in with email. Free test USD arrives by itself.</p>
-        <MoneyPath />
+        <MoneyPath r={r} block={block} />
       </div>
     );
 
@@ -183,7 +199,7 @@ export default function DepositForm({ id }: { id: bigint }) {
           ? `You have ${fmtToken(max)} ${TOKEN_SYMBOL}. Try a smaller amount.`
           : `Wallet ${loaded ? fmtToken(wallet) : "…"} ${TOKEN_SYMBOL}${free >= 10_000n ? ` · ${fmtToken(free)} ${TOKEN_SYMBOL} ready to play` : ""}`}
       </div>
-      <MoneyPath amount={amt} />
+      <MoneyPath amount={amt} r={r} block={block} />
       {error && <div className="error small" role="alert">{error}</div>}
     </div>
   );

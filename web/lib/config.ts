@@ -24,6 +24,9 @@ export const PREVIOUS_ROUNDS = [
   { label: "the first version", address: envAddress("0xF265552D95De56AecdC1711966f2C17f89965bd0") },
 ];
 
+/** Base yield to every depositor, a year (Rounds.baseAprBps: Aave AUSD + 0.1%). */
+export const BASE_APR_BPS = 594;
+
 /** Prize shares per place (bps), as in Rounds.prizeShares(): three large prizes, seven small ones. */
 export const PRIZE_SHARES = [5000, 2000, 1000, 300, 300, 300, 300, 300, 250, 250];
 /** Prizes per place for a pool: places nobody can take (fewer players) go to the 1st place. */
@@ -35,13 +38,29 @@ export function prizeSplit(pool: bigint, players: number) {
 }
 export const DISCORD_URL = "https://discord.gg/QZMqnBeKC";
 /** Our own wallets, marked "team" on the Season page (honest stats). */
-/** Test players we funded ourselves (one-year BTC rounds #38/#39), always marked "team". */
+/** Test players we funded ourselves, always marked "team" (never counted as real users). */
 const TEST_WALLETS = [
   "0xA5b8BD1b0EA6Afa0dFFA62296b776C817F743cE2",
   "0x5fb85f0C94a884A2b318334FA6CdF178C4b56f81",
   "0x91503C4f1e216f79B21eB726C9b7d521111EdBb3",
   "0xE96EE40cd0f73821c99e94fDa613988174Cdb828",
   "0x234fF607e36Cb17ED3a5EC9b821a629568c9334B",
+  // Season 0 test players (13.10), also ours
+  "0x516DCCbECfaff6EE6c39f1929D546Bf77b36B0B1",
+  "0x7aa7868Add45040B9C839B56D648caA257506729",
+  "0xd1f5850111f780B03F249212F739705EF57DAa62",
+  "0x12aFAFEb736f50690b4EFD64fEe2A5cec54EA85e",
+  "0x59D7D87Fa78630a448158a500C36b3C25B49461d",
+  "0xD4fb4072331b9Ef9a64D129bd324ea7148602f0E",
+  "0x3e9C3A2a32863E8bFE9b9d330818f319355B83A5",
+  "0xe2182911789AbA353D1C00F425B0959C3168826C",
+  "0x0a1C0373caA37edb315C20f13C5a22E6B2C23A40",
+  "0x387DaBD0bcf3dcbA872037Ee29A8169b1C87b8ad",
+  "0xE782390B2c8B853440b644C67ACa37eF9E52445f",
+  "0xA7A6676F580E24C55fE147CA93b91A5C497BaDdC",
+  "0xcE5dD1586352d757824080E04f8D9F80963641B6",
+  "0x01d82E553A2e6eC9eb7564A4AD48E3CF50F19CCb",
+  "0xc0543d2ca6d31113FA56978f9A0C096a47621D8f",
 ];
 export const TEAM = [...(process.env.NEXT_PUBLIC_TEAM ?? "0xB2979F7369DF11ac17B8B58CDEcB36b6f095E7Fe").split(","), ...TEST_WALLETS].map((a) =>
   a.trim().toLowerCase(),
