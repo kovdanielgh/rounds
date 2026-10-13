@@ -10,11 +10,11 @@ contract MockEntropy {
     uint64 public lastSequence;
     mapping(uint64 => address) public requester;
 
-    function getFeeV2() external view returns (uint128) {
+    function getFeeV2(uint32) external view returns (uint128) {
         return fee;
     }
 
-    function requestV2() external payable returns (uint64) {
+    function requestV2(uint32) external payable returns (uint64) {
         require(msg.value >= fee, "fee");
         requester[++lastSequence] = msg.sender;
         return lastSequence;

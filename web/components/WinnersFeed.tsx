@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import type { RoundView } from "@/hooks/useRounds";
-import { BLOCK_SECONDS, TEAM, TOKEN_SYMBOL } from "@/lib/config";
+import { BLOCK_SECONDS, TEAM, TOKEN_SYMBOL, prizeSplit } from "@/lib/config";
 import { fmtDuration, fmtToken, shortAddr } from "@/lib/format";
 
-const SHARES = [8000n, 1500n, 500n]; // 1st place gets SHARES[0]
 
 /**
  * The latest finished round, one still line (no ticker: motion on the first screen is noise).
@@ -27,7 +26,7 @@ export default function WinnersFeed({ rounds, block }: { rounds: RoundView[]; bl
           <>
             <span className="mono">{shortAddr(winner)}</span>
             {TEAM.includes(winner.toLowerCase()) && <span className="muted"> (team)</span>} won{" "}
-            <b>{fmtToken((last.pool * SHARES[0]) / 10000n)} {TOKEN_SYMBOL}</b> on {side}
+            <b>{fmtToken(prizeSplit(last.pool, last.count)[0])} {TOKEN_SYMBOL}</b> on {side}
           </>
         ) : (
           <>

@@ -16,10 +16,9 @@ import { statusText } from "@/components/VaultCard";
 import { progressOf, useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
 import { useTx } from "@/hooks/useTx";
 import { roundsAbi } from "@/lib/abi";
-import { ROUNDS, TOKEN_SYMBOL, isFixedPrize, isRollover, isYearLong, leverageOf, CHAIN_ID } from "@/lib/config";
+import { prizeSplit, ROUNDS, TOKEN_SYMBOL, isFixedPrize, isRollover, isYearLong, leverageOf, CHAIN_ID } from "@/lib/config";
 import { fmtPrice, fmtToken, shortAddr } from "@/lib/format";
 
-const SHARES = [8000n, 1500n, 500n];
 
 /**
  * The rules in plain words, built from the round itself (the same for every round, old or new),
@@ -31,7 +30,7 @@ function rulesOf(r: RoundView) {
     "Start price: the Perpl price when entry closes.",
     "Final price: the price when the round ends.",
     `${up ? "Up" : "Down"} is right if the final price is ${up ? "above" : "below"} the start price.`,
-    "Right call: 3 winners are drawn at random. A bigger deposit gives a bigger chance.",
+    "Right call: up to 10 different winners are drawn at random: three big prizes (50%, 20%, 10%) and seven small ones (3% or 2.5% each). A bigger deposit gives a bigger chance.",
     ...(isRollover(r.description) ? ["A win rolls the prize into the next round, up to 3 in a row. The third win is drawn."] : []),
     "Wrong call: everyone gets their whole deposit back.",
     "You can exit before entry closes.",
@@ -76,6 +75,10 @@ export default function VaultPage() {
   });
   const [, stake, claimed] = (mine?.[0] as readonly [number, bigint, boolean, bigint, bigint]) ?? [0, 0n, false];
   const prize = (mine?.[1] as bigint) ?? 0n;
+  // All winners (up to 10): the round struct keeps only the top three.
+  const { data: allWinners } = useReadContract({
+    chainId: CHAIN_ID, address: ROUNDS, abi: roundsAbi, functionName: "winnersOf", args: [id], query: { refetchInterval: 15000 },
+  });
 
   if (!r)
     return (
@@ -140,7 +143,10 @@ export default function VaultPage() {
             <div><dt>Total{r.poolLive ? " · live" : ""}</dt><dd><Pool r={r} /></dd></div>
             {/* Settled and nobody's side won: no places to show. */}
             {!(r.phase === 4 && /^0x0+$/.test(r.winners[0] ?? "0x0")) && (
-              <div><dt>1st · 2nd · 3rd</dt><dd>{SHARES.map((s) => fmtToken((prizePool * s) / 10000n)).join(" · ")} {TOKEN_SYMBOL}</dd></div>
+              <>
+                <div><dt>1st · 2nd · 3rd</dt><dd>{prizeSplit(prizePool, 10).slice(0, 3).map((v) => fmtToken(v)).join(" · ")} {TOKEN_SYMBOL}</dd></div>
+                <div><dt>4th–10th</dt><dd>{fmtToken(prizeSplit(prizePool, 10)[9])}–{fmtToken(prizeSplit(prizePool, 10)[3])} {TOKEN_SYMBOL}</dd></div>
+              </>
             )}
             <div><dt>Everyone put in</dt><dd>{r.totalStake > 0n ? `${fmtToken(r.totalStake)} ${TOKEN_SYMBOL}` : "Be the first"}</dd></div>
             {stake > 0n && <div><dt>You put in · chance</dt><dd>{fmtToken(stake)} · 1 in {chanceIn}</dd></div>}
@@ -163,7 +169,7 @@ export default function VaultPage() {
                       : `${leverageOf(r.marketId, r.leverage)}x`}
                 </dd>
               </div>
-              <div><dt>Prize split</dt><dd>80% · 15% · 5%</dd></div>
+              <div><dt>Prize split</dt><dd>50% · 20% · 10% · 7 × 2.5–3%</dd></div>
             </dl>
           </details>
 
@@ -240,12 +246,14 @@ export default function VaultPage() {
           )}
           {error && <div className="error small">{error}</div>}
 
-          {r.phase === 4 && r.winners[0] !== "0x0000000000000000000000000000000000000000" && (
+          {r.phase === 4 && (allWinners ?? []).length > 0 && (
             <>
               <h2>Winners</h2>
               <ol className="winners">
-                {r.winners.filter((w) => !/^0x0+$/.test(w)).map((w) => (
-                  <li key={w} className={w === address ? "me" : ""}>{shortAddr(w)}</li>
+                {(allWinners ?? []).map((w, i) => (
+                  <li key={w} className={w.toLowerCase() === address?.toLowerCase() ? "me" : ""}>
+                    {shortAddr(w)} <span className="muted">· {fmtToken(prizeSplit(r.pool, (allWinners ?? []).length)[i] ?? 0n)} {TOKEN_SYMBOL}</span>
+                  </li>
                 ))}
               </ol>
             </>

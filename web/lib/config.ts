@@ -18,8 +18,21 @@ export const ROUNDS = envAddress(process.env.NEXT_PUBLIC_ROUNDS);
 export const AUSD = envAddress(process.env.NEXT_PUBLIC_AUSD);
 export const PRICE_SOURCE = envAddress(process.env.NEXT_PUBLIC_PRICE_SOURCE);
 export const ENGINE = envAddress(process.env.NEXT_PUBLIC_ENGINE);
-/** The first Rounds contract (before rollover). Players can still take their money out of it. */
-export const ROUNDS_V1 = envAddress(process.env.NEXT_PUBLIC_ROUNDS_V1 || "0xF265552D95De56AecdC1711966f2C17f89965bd0");
+/** Earlier Rounds contracts. They only finish their rounds; players take their money out from the profile. */
+export const PREVIOUS_ROUNDS = [
+  { label: "the second version", address: envAddress("0xA04679b2A4f457d6056bd1a8Cf375618eF90715a") },
+  { label: "the first version", address: envAddress("0xF265552D95De56AecdC1711966f2C17f89965bd0") },
+];
+
+/** Prize shares per place (bps), as in Rounds.prizeShares(): three large prizes, seven small ones. */
+export const PRIZE_SHARES = [5000, 2000, 1000, 300, 300, 300, 300, 300, 250, 250];
+/** Prizes per place for a pool: places nobody can take (fewer players) go to the 1st place. */
+export function prizeSplit(pool: bigint, players: number) {
+  const places = Math.max(1, Math.min(PRIZE_SHARES.length, players));
+  const out = PRIZE_SHARES.slice(0, places).map((s) => (pool * BigInt(s)) / 10_000n);
+  out[0] = pool - out.slice(1).reduce((a, b) => a + b, 0n);
+  return out;
+}
 export const DISCORD_URL = "https://discord.gg/QZMqnBeKC";
 /** Our own wallets, marked "team" on the Season page (honest stats). */
 /** Test players we funded ourselves (one-year BTC rounds #38/#39), always marked "team". */

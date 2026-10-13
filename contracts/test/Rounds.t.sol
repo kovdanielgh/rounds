@@ -64,7 +64,10 @@ contract RoundsTest is Test {
         rounds = new Rounds(
             IERC20(address(usd)), IERC4626(address(vault)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
         );
-        rounds.setEconomics(300, 0, 4_650, 78_840_000); // no advance in the basic tests
+        rounds.setEconomics(300, 0, 0, 78_840_000); // no advance and no base yield in the basic tests
+        uint16[] memory three = new uint16[](3);
+        (three[0], three[1], three[2]) = (8_000, 1_500, 500); // the old 80/15/5 split for the basic tests
+        rounds.setPrizeShares(three);
         eng = new MockEngine(usd);
         usd.mint(address(this), 1_000_000e6);
         usd.approve(address(rounds), type(uint256).max);
@@ -511,12 +514,13 @@ contract RoundsTest is Test {
         _assertSolvent();
     }
 
-    function test_vaultYield_basePart_toUsers_restToTreasury() public {
+    function test_vaultYield_fixedBaseRate_toUsers_restToTreasury() public {
         MockYieldVault v = new MockYieldVault(IERC20Like(address(usd)), 1_000); // 10% APR
         Rounds r2 = new Rounds(
             IERC20(address(usd)), IERC4626(address(v)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
         );
-        usd.mint(address(v), 1_000e6); // yield reserve
+        r2.setEconomics(300, 0, 594, 1_000); // base 5.94% a year, a "year" of 1,000 blocks
+        usd.mint(address(v), 3_000e6); // yield reserve
         usd.mint(alice, 1_000e6);
         usd.mint(bob, 3_000e6);
         vm.prank(alice);
@@ -527,25 +531,42 @@ contract RoundsTest is Test {
         r2.deposit(1_000e6);
         vm.prank(bob);
         r2.deposit(3_000e6);
+        // a big treasury does not raise the users' rate any more
+        usd.mint(address(this), 20_000e6);
+        usd.approve(address(r2), type(uint256).max);
+        r2.fundTreasury(20_000e6);
 
-        vm.warp(block.timestamp + 365 days); // vault: 4000 -> 4400
+        vm.warp(block.timestamp + 365 days); // vault: 24000 -> 26400
+        vm.roll(block.number + 1_000); // one "year" of blocks for the base rate
         r2.harvest();
-        // users get 46.5% of 400 = 186, pro rata 1:3; treasury 214
-        assertApproxEqAbs(r2.balanceWithYield(alice), 1_000e6 + 46_500_000, 2);
-        assertApproxEqAbs(r2.balanceWithYield(bob), 3_000e6 + 139_500_000, 2);
-        assertApproxEqAbs(r2.treasury(), 214e6, 2);
+        // users: exactly 5.94% on 4000 = 237.6 (1:3); treasury: 20000 + 2400 - 237.6
+        assertApproxEqAbs(r2.balanceWithYield(alice), 1_000e6 + 59_400_000, 2);
+        assertApproxEqAbs(r2.balanceWithYield(bob), 3_000e6 + 178_200_000, 2);
+        assertApproxEqAbs(r2.treasury(), 20_000e6 + 2_400e6 - 237_600_000, 3);
 
         uint256 a = r2.balanceWithYield(alice);
         vm.prank(alice);
         r2.withdraw(a);
-        assertApproxEqAbs(usd.balanceOf(alice), 1_046_500_000, 2);
-        // liabilities can be a few wei above assets: per-user yield is rounded down, totalBalances is not
-        assertApproxEqAbs(
-            v.convertToAssets(v.balanceOf(address(r2))), r2.totalBalances() + r2.treasury() + r2.reserved() + r2.fees(), 3
+        assertApproxEqAbs(usd.balanceOf(alice), 1_059_400_000, 2);
+    }
+
+    function test_vaultYield_baseNeverMoreThanEarned() public {
+        MockYieldVault v = new MockYieldVault(IERC20Like(address(usd)), 100); // 1% APR, below the base
+        Rounds r2 = new Rounds(
+            IERC20(address(usd)), IERC4626(address(v)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
         );
-        uint256 b = r2.balanceWithYield(bob);
-        vm.prank(bob);
-        r2.withdraw(b); // last user can take everything they see
+        r2.setEconomics(300, 0, 594, 1_000);
+        usd.mint(address(v), 1_000e6);
+        usd.mint(alice, 1_000e6);
+        vm.prank(alice);
+        usd.approve(address(r2), type(uint256).max);
+        vm.prank(alice);
+        r2.deposit(1_000e6);
+        vm.warp(block.timestamp + 365 days);
+        vm.roll(block.number + 1_000);
+        r2.harvest();
+        assertApproxEqAbs(r2.balanceWithYield(alice), 1_010e6, 2); // all of the 10 earned, not 59.4
+        assertEq(r2.treasury(), 0);
     }
 
     function test_feeIsEditable_capped() public {
@@ -815,5 +836,81 @@ contract RoundsTest is Test {
         split.open(1, 16, true, 1, 0);
         vm.expectRevert(SplitEngine.NotRounds.selector);
         split.close(1);
+    }
+
+    // ---------------------------------------------------------------- 10-place prizes
+
+    function _tenPlayers(uint256 id) internal returns (address[12] memory us) {
+        for (uint256 i; i < 12; i++) {
+            us[i] = makeAddr(string(abi.encodePacked("p", vm.toString(i))));
+            _fund(us[i], 100e6);
+            _enter(us[i], id, (i + 1) * 5e6);
+        }
+    }
+
+    function test_tenPlaces_bigAndSmallPrizes_allDifferent() public {
+        Rounds r3 = new Rounds(
+            IERC20(address(usd)), IERC4626(address(vault)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
+        );
+        r3.setEconomics(300, 0, 0, 78_840_000);
+        usd.mint(address(this), 1_000e6);
+        usd.approve(address(r3), type(uint256).max);
+        r3.fundTreasury(1_000e6);
+        rounds = r3; // helpers use `rounds`
+        uint256 id = _create(MON, 1, Rounds.Thesis.Bullish, 100e6);
+        address[12] memory us = _tenPlayers(id);
+        uint64 seq = _resolve(id, 2_100);
+        uint256 g = gasleft();
+        entropy.fire(seq, keccak256("ten"));
+        emit log_named_uint("callback gas, 10 winners of 12", g - gasleft());
+
+        address[] memory w = rounds.winnersOf(id);
+        assertEq(w.length, 10);
+        uint16[10] memory share = [5_000, 2_000, 1_000, 300, 300, 300, 300, 300, 250, 250];
+        uint256 sum;
+        for (uint256 i; i < 10; i++) {
+            for (uint256 j = i + 1; j < 10; j++) assertTrue(w[i] != w[j]); // nobody twice
+            assertEq(rounds.prizeOf(id, w[i]), 100e6 * uint256(share[i]) / 10_000);
+            sum += rounds.prizeOf(id, w[i]);
+        }
+        assertEq(sum, 100e6);
+        Rounds.Round memory r = rounds.getRound(id);
+        assertEq(r.winners[0], w[0]); // the top three stay in the round struct too
+        assertEq(r.winners[2], w[2]);
+        us; // silence
+    }
+
+    function test_tenPlaces_fewerPlayers_restToFirst() public {
+        Rounds r3 = new Rounds(
+            IERC20(address(usd)), IERC4626(address(vault)), IEntropyV2(address(entropy)), IPriceSource(address(px)), 10, 20
+        );
+        r3.setEconomics(300, 0, 0, 78_840_000);
+        usd.mint(address(this), 1_000e6);
+        usd.approve(address(r3), type(uint256).max);
+        r3.fundTreasury(1_000e6);
+        rounds = r3;
+        uint256 id = _create(MON, 1, Rounds.Thesis.Bullish, 100e6);
+        _fund(alice, 300e6); // balances live in r3 now
+        _fund(bob, 100e6);
+        _enter(alice, id, 300e6);
+        _enter(bob, id, 100e6);
+        entropy.fire(_resolve(id, 2_100), keccak256("two"));
+        address[] memory w = rounds.winnersOf(id);
+        assertEq(w.length, 2);
+        assertEq(rounds.prizeOf(id, w[1]), 20e6); // 2nd place share
+        assertEq(rounds.prizeOf(id, w[0]), 80e6); // 1st: 50% + every place nobody took
+    }
+
+    function test_prizeShares_onlyOwner_sumMustBe100() public {
+        uint16[] memory bad = new uint16[](2);
+        (bad[0], bad[1]) = (6_000, 3_000);
+        vm.expectRevert(Rounds.BadAmount.selector);
+        rounds.setPrizeShares(bad);
+        uint16[] memory tooMany = new uint16[](11);
+        vm.expectRevert(Rounds.BadAmount.selector);
+        rounds.setPrizeShares(tooMany);
+        vm.prank(alice);
+        vm.expectRevert(Rounds.NotOwner.selector);
+        rounds.setPrizeShares(bad);
     }
 }

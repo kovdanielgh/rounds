@@ -25,8 +25,8 @@ export default function How() {
           pays it. Only the prize is traded, as a real position on Perpl, so it can grow.
         </li>
         <li>
-          <strong>Right call:</strong> 3 winners are drawn at random and share the prize (80%, 15%, 5%). A bigger deposit
-          gives a bigger chance.
+          <strong>Right call:</strong> up to 10 winners are drawn at random: three big prizes (50%, 20%, 10%) and seven
+          small ones. A bigger deposit gives a bigger chance, and nobody wins twice in one round.
         </li>
         <li>
           <strong>Wrong call:</strong> nothing is lost. Everyone gets their whole deposit back.

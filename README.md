@@ -14,7 +14,7 @@ Rounds is a no-loss up/down market on Monad. You pick up or down on BTC. Every r
 
 1. **You deposit dollars** into a round, for example "BTC goes up in the next 24 hours".
 2. **Only the round's prize pool trades.** Your deposit never trades.
-3. **When the round ends,** you get your deposit back. If the idea was correct, three depositors also win the prize: 80%, 15% and 5%.
+3. **When the round ends,** you get your deposit back. If the idea was correct, up to 10 different depositors win the prize: three big prizes (50%, 20%, 10%) and seven small ones (3% or 2.5% each).
 
 A larger deposit gives a larger chance to win. Nobody can lose the deposit.
 
@@ -27,19 +27,19 @@ flowchart LR
     U(["You"]) -- "deposit" --> R["Rounds contract"]
     R -- "all deposits" --> V[("Yield vault<br/>ERC-4626")]
     V -- "yield" --> H{"harvest"}
-    H -- "about 2% a year" --> D(["All depositors"])
+    H -- "base yield (target: Aave + 0.1%)" --> D(["All depositors"])
     H -- "the rest" --> T["Treasury"]
     T -- "advance:<br/>yield of this round" --> E["PerplEngine"]
     E -- "long or short" --> P[("Perpl<br/>order book")]
     P -- "position closes" --> Pot["Prize pool"]
-    Pot -- "80% · 15% · 5%" --> W(["3 winners"])
+    Pot -- "50 · 20 · 10% + 7 small" --> W(["up to 10 winners"])
     R -- "claim: deposit<br/>always comes back" --> U
 ```
 
 In plain words:
 
 - **Deposits stay in the vault.** They earn yield all the time.
-- **Everyone gets base yield,** about 2% a year. Nobody needs to win for this.
+- **Everyone gets base yield** (target on mainnet: Aave + 0.1%, about 5.9% a year). Nobody needs to win for this.
 - **The treasury pays the round in advance.** When the entry window closes, the treasury gives the round the yield that the stakes will earn during the round. The round does not wait. The yield that comes in later pays the treasury back.
 - **Only this advance trades.** The engine opens one position on Perpl with it. The maximum loss is this advance.
 - **The prize earns yield too.** A winner gets the prize at the draw. The prize earns base yield until the winner claims it.
@@ -56,7 +56,7 @@ flowchart LR
     D --> Q{"Idea correct?"}
     Q -- "yes" --> R{"Rollover round<br/>and less than<br/>3 in a row?"}
     R -- "yes" --> N["Pool moves into<br/>the next round"]
-    R -- "no" --> F["Pyth Entropy<br/>draws 3 winners"]
+    R -- "no" --> F["Pyth Entropy<br/>draws up to 10 winners"]
     N --> H2
     Q -- "no" --> G["Pool goes back<br/>to the treasury"]
     F --> H["<b>Claim</b><br/>deposit + prize + yield<br/>to your wallet"]
@@ -67,7 +67,7 @@ flowchart LR
 |---|---|---|
 | **Open** | Deposit, add more, exit | Nothing trades yet |
 | **Closed** | Wait | The strike is fixed. The position on Perpl is open. Your stake is locked. |
-| **Drawing** | Wait (about 2 blocks) | Pyth Entropy sends a random number. The contract picks 3 winners. |
+| **Drawing** | Wait (about 2 blocks) | Pyth Entropy sends a random number. The contract picks up to 10 different winners. |
 | **Settled** | Claim | One click sends your deposit, prize and yield to your wallet |
 
 ### Kinds of rounds (live now)
@@ -92,7 +92,7 @@ You put **100 USD** into "Bullish BTC, 15x". The round has a pool of **20 USD**.
 |---|---|
 | BTC goes down. The idea is wrong. | 100 USD + base yield |
 | BTC goes up. The idea is correct, but you are not drawn. | 100 USD + base yield |
-| BTC goes up 2%. The 15x position makes +30%. The pool grows to 26 USD. A 3% fee comes off the 6 USD profit, so the pool is 25.82 USD. You are drawn 1st and get 80% of it. | 100 USD + about 20.66 USD + base yield |
+| BTC goes up 2%. The 15x position makes +30%. The pool grows to 26 USD. A 3% fee comes off the 6 USD profit, so the pool is 25.82 USD. You are drawn 1st and get 50% of it. | 100 USD + about 12.91 USD + base yield |
 
 Your chance to be drawn is your stake divided by all stakes in the round.
 
@@ -114,7 +114,7 @@ Your chance to be drawn is your stake divided by all stakes in the round.
 - **Anyone can call them, but only in a short window** (150 blocks, about 45 s) after the phase ends. A caller cannot pick a better moment.
 - **The draw uses Pyth Entropy,** a verifiable random number. A retry is owner-only, so nobody can cancel a result they do not like.
 - **User deposits never go to the engine.** Only the round budget does. The contract keeps this rule.
-- **51 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
+- **55 tests pass.** 9 of them are fork tests against the real Perpl exchange on Monad testnet.
 
 ---
 
@@ -148,10 +148,10 @@ All our contracts are **verified on MonadScan**: click an address to read the so
 
 | Contract | Address | Job |
 |---|---|---|
-| `Rounds` | [`0xA046…715a`](https://testnet.monadscan.com/address/0xA04679b2A4f457d6056bd1a8Cf375618eF90715a#code) | Rounds, deposits, yield split, draw, claim |
-| `SplitEngine` | [`0xE0e1…Ad53`](https://testnet.monadscan.com/address/0xE0e1485Be0A529D138087818c49441cc35F2Ad53#code) | Engine router: longs to one Perpl account, shorts to another, so both sides of a pair trade |
-| `PerplEngine` (longs) | [`0xD5d7…bA86`](https://testnet.monadscan.com/address/0xD5d7232bDe5744A3afE276b22d83253E9db4bA86#code) | Opens and closes the long positions on Perpl |
-| `PerplEngine` (shorts) | [`0x8681…Aded`](https://testnet.monadscan.com/address/0x86819A1B757735B3EEC8A9536e71C882b40BAded#code) | Opens and closes the short positions on Perpl |
+| `Rounds` | [`0x030b…62ad`](https://testnet.monadscan.com/address/0x030b1D29A5f99f99efD4bcDFbEE78d6C19e162ad#code) | Rounds, deposits, yield split, draw, claim |
+| `SplitEngine` | [`0x6990…87A3`](https://testnet.monadscan.com/address/0x69904dDEC56Fcfe2A87a77b2e1ae4547611A87A3#code) | Engine router: longs to one Perpl account, shorts to another, so both sides of a pair trade |
+| `PerplEngine` (longs) | [`0xD2dB…cD7b`](https://testnet.monadscan.com/address/0xD2dBCbF1BF3F2acE53726e7077825C7F6810cD7b#code) | Opens and closes the long positions on Perpl |
+| `PerplEngine` (shorts) | [`0xd58F…DD8e`](https://testnet.monadscan.com/address/0xd58F556534eAdF858CFAaf9Af80cC552eE85DD8e#code) | Opens and closes the short positions on Perpl |
 | `PerplPriceSource` | [`0xcF23…23D3`](https://testnet.monadscan.com/address/0xcF23CC9d662d1d623546BA3AB2A8fE07231723D3#code) | Reads the Perpl mark price |
 | `Faucet` | [`0xbCF1…7e19`](https://testnet.monadscan.com/address/0xbCF1beF801CC4A9c948A464410DB210Fe2d07e19#code) | Test USD and a little MON for new players; our relayer pays the gas |
 | `MockYieldVault` | [`0xF731…BfBc0`](https://testnet.monadscan.com/address/0xF73182502D01fF6E564bF683FB2e7f7D180BfBc0#code) | ERC-4626 vault with fixed APR (testnet only) |
@@ -159,7 +159,7 @@ All our contracts are **verified on MonadScan**: click an address to read the so
 | Pyth Entropy | [`0x825c…3c07`](https://testnet.monadscan.com/address/0x825c0390f379C631f3Cf11A82a37D20BddF93c07) | Random numbers |
 | Perpl Exchange | [`0x1964…80cc`](https://testnet.monadscan.com/address/0x1964C32f0bE608E7D29302AFF5E61268E72080cc) | On-chain perpetuals order book |
 
-The first `Rounds` contract ([`0xF265…5bd0`](https://testnet.monadscan.com/address/0xF265552D95De56AecdC1711966f2C17f89965bd0#code), before rollover) only finishes its last rounds. Players take their money out of it from the profile page.
+Earlier `Rounds` contracts only finish their last rounds, and players take their money out of them from the profile page: v2 [`0xA046…715a`](https://testnet.monadscan.com/address/0xA04679b2A4f457d6056bd1a8Cf375618eF90715a#code) (before 10 winners and the fixed base rate) and v1 [`0xF265…5bd0`](https://testnet.monadscan.com/address/0xF265552D95De56AecdC1711966f2C17f89965bd0#code) (before rollover).
 
 Leverage caps per market: BTC 15x, ETH 12x, SOL 10x, MON 3x. Each round sets its own leverage up to the cap.
 
@@ -218,6 +218,44 @@ web/                                Next.js app (site, /season, /embed, share ca
 
 ---
 
+## Mainnet yield plan (numbers read on Monad mainnet, 13 Oct)
+
+| Source | Yield | How we know |
+|---|---|---|
+| Aave AUSD (the benchmark) | 5.84% (3.37 base + 2.47 rewards) | DefiLlama |
+| Best AUSD vaults: Euler, Morpho, Upshift | 7.1–8.9% | DefiLlama |
+| MON liquid staking (Kintsu sMON) | 11.56% | on-chain: sMON/MON rate over 5.3 days |
+| MON short on Perpl: funding | −1.3% a year on average (−4 … +4 per 100k per interval) | on-chain: Perpl `getPerpetualInfo`, 28 samples over a week |
+| Perpl MON open interest | ~2.9M MON ≈ 71k USD | on-chain |
+
+```mermaid
+flowchart LR
+    U["Users<br/>deposit AUSD"] --> R["Rounds"]
+    R --> V["Core: best AUSD vault<br/>~7.5–8.9%, no cap"]
+    R -. "treasury only,<br/>hard budget cap" .-> S["Special strategies<br/>MON basis now,<br/>ETH / BTC staking later"]
+    A["Agora partner rewards<br/>for AUSD float"] -.-> R
+    V --> Y{"Yield"}
+    S --> Y
+    Y -- "base: benchmark + 0.1%<br/>~5.9% to every depositor" --> U
+    Y -- "everything above" --> P["Prize pool"]
+    P --> E["Perpl position 3x–15x<br/>stop-loss at 70%"]
+    E -- "right call" --> W["Winners"]
+    E -- "wrong call" --> T["Treasury"]
+```
+
+**Strategies and their caps.** User deposits go only to the core vault. Special strategies run on treasury money with a hard budget, so a strategy can lose only its own budget, never a deposit.
+
+| Strategy | Expected now | Budget cap | Status |
+|---|---|---|---|
+| Core AUSD vault (Euler / Morpho / Aave) | ~7.5–8.9% | none | mainnet beta |
+| Agora rewards for AUSD float | on top, terms open | — | in talks |
+| MON basis: sMON (11.56%) + equal MON short on Perpl | ~7% net at today's funding | max 10% of the treasury and below Perpl MON open interest | special, treasury only |
+| ETH / BTC staking + short (same pattern) | to measure | own cap each | later |
+
+**At 1M USD deposited:** the core vault (~7.5%) earns ~75,000 USD a year. ~59,400 USD (Aave + 0.1%) goes to every depositor as base yield, ~15,600 USD a year (~1,300 USD a month) becomes prizes before the Perpl trade multiplies them. Honest note: the MON basis does not beat the best AUSD vaults today (funding is slightly negative, and Perpl's MON market is small), so it stays a capped special strategy.
+
+**On testnet** the yield vault is a mock. It now pays 7.5% (the rate of the best AUSD vaults), depositors get ~5.9%, and 1.56% of stakes a year funds the prizes. Today the base is a share of the vault yield. A fixed base rate (benchmark + 0.1%) per balance is the next contract change.
+
 ## Partners we are talking to
 
 - **Perpl** (execution venue): every round trades on Perpl's on-chain order book. Rounds is a "no-loss mode" that brings new traders to it. From the Perpl team: *"I like this."* (Arich, Perpl, quoted with permission.)
@@ -229,6 +267,7 @@ web/                                Next.js app (site, /season, /embed, share ca
 - **Testnet only.** The yield vault is a mock with a fixed APR, paid from a reserve that we fund. On mainnet, Aave AUSD replaces it through Aave's ERC-4626 wrapper, with no change to `Rounds`. Agora, the AUSD issuer, recommended Aave for instant withdrawals.
 - **Perps are linear.** Higher leverage gives larger and rarer prizes, not a larger average. Options or outcome tokens can add convexity later.
 - **One position per market and side:** Perpl nets positions per account, so each engine (longs, shorts) holds one position per market. Two rounds on the same market and side at the same time: the second one plays for a fixed prize.
+- **A stop-loss guard:** the keeper closes a position at 70% loss of its margin, before Perpl liquidates it, so the rest returns to the prize pool (`STOP_LOSS` in `bots/index.mjs`).
 - **A random draw has legal risk** in some countries. In mirror pairs each user picks a side, which makes the product closer to a derivative.
 
 ## Next

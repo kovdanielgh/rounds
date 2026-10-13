@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createPublicClient, createWalletClient, http, stringToHex } from "viem";
+import { createPublicClient, createWalletClient, http, parseAbi, stringToHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 
@@ -29,6 +29,7 @@ const SCHEDULER_EVERY_MS = 30000;
 const roundTuple = "(bytes32 asset,uint256 marketId,uint8 thesis,uint8 status,bool thesisWon,uint64 entryEnd,uint64 end,uint64 sequence,uint32 count,uint256 budget,uint256 borrowed,uint256 strike,uint256 finalPrice,uint256 totalStake,address[3] winners,uint256 funded,uint64 start,uint8 leverage,uint256 accAtDraw)";
 const abi = [
   { type: "function", name: "roundCount", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "engine", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "phase", stateMutability: "view", inputs: [{ type: "uint256" }], outputs: [{ type: "uint8" }] },
   { type: "function", name: "drawFee", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   {
@@ -124,6 +125,80 @@ async function keeperTick() {
   }
 }
 
+// ---------------------------------------------------------------- stop-loss guard
+
+// Close a round's Perpl position before Perpl liquidates it: when the open loss reaches STOP_LOSS
+// of the position collateral, the owner calls engine.closePosition. What is left goes back into the
+// prize pool at settle, instead of burning in a liquidation. Read-only in DRY_RUN.
+const STOP_LOSS = Number(process.env.STOP_LOSS ?? 0.7);
+const GUARD_EVERY_MS = 5000;
+const engineAbi = parseAbi([
+  "function engine() view returns (address)",
+  "function longs() view returns (address)",
+  "function shorts() view returns (address)",
+  "function engineOf(uint256) view returns (address)",
+  "function exchange() view returns (address)",
+  "function accountId() view returns (uint256)",
+  "function positions(uint256) view returns (uint256 perpId, uint256 margin, int256 credit, uint256 lotLNS, bool isLong, bool open, bool closed)",
+  "function closePosition(uint256)",
+]);
+const dexAbi = parseAbi([
+  "function getPosition(uint256 perpId, uint256 accountId) view returns ((uint256 accountId, uint256 nextNodeId, uint256 prevNodeId, uint8 positionType, uint256 depositCNS, uint256 pricePNS, uint256 lotLNS, uint256 entryBlock, int256 pnlCNS, int256 deltaPnlCNS, int256 premiumPnlCNS) info, uint256 markPricePNS, bool markPriceValid)",
+  "function getPerpetualInfo(uint256 perpId) view returns ((string name, string symbol, uint256 priceDecimals, uint256 lotDecimals, bytes32 linkFeedId, uint256 priceTolPer100K, uint256 marginTol, uint256 marginTolDecimals, uint256 refPriceMaxAgeSec, uint256 positionBalanceCNS, uint256 insuranceBalanceCNS, uint256 markPNS, uint256 markTimestamp, uint256 lastPNS, uint256 lastTimestamp, uint256 oraclePNS, uint256 oracleTimestampSec, uint256 longOpenInterestLNS, uint256 shortOpenInterestLNS, uint256 fundingStartBlock, int16 fundingRatePct100k, uint256 absFundingClampPctPer100K, uint8 status, uint256 basePricePNS, uint256 maxBidPriceONS, uint256 minBidPriceONS, uint256 maxAskPriceONS, uint256 minAskPriceONS, uint256 numOrders, bool ignOracle))",
+]);
+const call = (address, abi_, functionName, args = []) => client.readContract({ address, abi: abi_, functionName, args });
+let engines; // { split, longs, shorts, dex, account: Map(engine -> accountId) }
+const stopped = new Set();
+
+async function loadEngines() {
+  const split = await read("engine");
+  let longs = split, shorts = split;
+  try { [longs, shorts] = await Promise.all([call(split, engineAbi, "longs"), call(split, engineAbi, "shorts")]); } catch { /* a single engine, no router */ }
+  const dex = await call(longs, engineAbi, "exchange");
+  const account = new Map();
+  for (const e of new Set([longs, shorts])) account.set(e, await call(e, engineAbi, "accountId"));
+  engines = { split, longs, shorts, dex, account };
+  log(`guard: engines longs ${longs}, shorts ${shorts}, stop at ${Math.round(STOP_LOSS * 100)}% loss`);
+}
+
+async function guardTick() {
+  if (!owner) return;
+  if (!engines) await loadEngines();
+  const [count, block] = await Promise.all([read("roundCount"), client.getBlockNumber()]);
+  const ids = [];
+  for (let id = Math.max(1, Number(count) - 60); id <= Number(count); id++) if (!stopped.has(id) && !done.has(id)) ids.push(BigInt(id));
+  const rounds = await Promise.all(ids.map((id) => read("getRound", [id])));
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i], r = rounds[i];
+    if (r.borrowed === 0n || r.strike === 0n || block > r.end) continue; // no live position
+    let engine = engines.longs;
+    if (engines.split !== engines.longs) {
+      const e = await call(engines.split, engineAbi, "engineOf", [id]);
+      if (!/^0x0+$/.test(e)) engine = e;
+    }
+    const p = await call(engine, engineAbi, "positions", [id]);
+    const [perpId, , , , isLong, open, closed] = p;
+    if (!open || closed) continue;
+    const [{ depositCNS, pricePNS, lotLNS }, mark] = await call(engines.dex, dexAbi, "getPosition", [perpId, engines.account.get(engine)]);
+    if (lotLNS === 0n || depositCNS === 0n || mark === 0n) continue;
+    const info = await call(engines.dex, dexAbi, "getPerpetualInfo", [perpId]);
+    const scale = 10n ** (info.priceDecimals + info.lotDecimals);
+    // open PnL in collateral units (1e6): lot * (mark - entry) * 1e6 / 10^(priceDec + lotDec), sign by side
+    const move = isLong ? BigInt(mark) - BigInt(pricePNS) : BigInt(pricePNS) - BigInt(mark);
+    const pnl = (BigInt(lotLNS) * move * 1_000_000n) / scale;
+    const loss = pnl < 0n ? Number(-pnl) / Number(depositCNS) : 0;
+    if (DRY_RUN) log(`[dry run] guard round ${id}: ${isLong ? "long" : "short"} loss ${(loss * 100).toFixed(1)}% of ${Number(depositCNS) / 1e6} USD`);
+    if (loss < STOP_LOSS) continue;
+    log(`guard: round ${id} ${isLong ? "long" : "short"} lost ${(loss * 100).toFixed(1)}% of its margin, closing before liquidation`);
+    if (DRY_RUN) { stopped.add(Number(id)); continue; }
+    const hash = await owner.writeContract({ address: engine, abi: engineAbi, functionName: "closePosition", args: [id] });
+    const receipt = await client.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") throw new Error(`closePosition(${id}) reverted`);
+    stopped.add(Number(id));
+    log(`guard: round ${id} closed early (${hash})`);
+  }
+}
+
 // ---------------------------------------------------------------- scheduler
 
 const loadState = () => (existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {});
@@ -206,4 +281,5 @@ function loop(name, fn, every) {
 
 log(`bots for ${ROUNDS}${SCHEDULER ? "" : " (keeper only)"}, keeper ${keeper.account.address}${owner ? `, owner ${owner.account.address}` : ""}`);
 loop("keeper", keeperTick, KEEPER_EVERY_MS);
+loop("guard", guardTick, GUARD_EVERY_MS);
 if (SCHEDULER) loop("scheduler", schedulerTick, SCHEDULER_EVERY_MS);

@@ -20,8 +20,8 @@ interface IERC4626 {
 
 /// @notice Pyth Entropy v2, the subset we use.
 interface IEntropyV2 {
-    function requestV2() external payable returns (uint64 sequenceNumber);
-    function getFeeV2() external view returns (uint128 fee);
+    function requestV2(uint32 gasLimit) external payable returns (uint64 sequenceNumber);
+    function getFeeV2(uint32 gasLimit) external view returns (uint128 fee);
 }
 
 /// @notice Price of a market, read on-chain. One adapter per venue (Perpl on Monad, Chainlink on RH Chain).
@@ -36,8 +36,11 @@ interface IPriceSource {
 /// A deposit is never at risk: only the budget is. Round length is in blocks and is editable.
 ///
 /// Yield: all money sits in an ERC-4626 vault. Everything above the liabilities (balances,
-/// treasury, round pots, fees) is earned yield. harvest() gives userYieldBps of it to all
-/// depositors (base yield, pro rata to balance) and the rest to the treasury.
+/// treasury, round pots, fees) is earned yield. harvest() pays every depositor a fixed base rate
+/// (baseAprBps a year on their balance, as long as the vault earns it) and the rest goes to the treasury.
+///
+/// Prizes: up to MAX_WINNERS different winners, drawn by stake. Shares are set by the owner
+/// (default: three large prizes, 50/20/10%, and seven small ones for the other 20%).
 ///
 /// Budget: when the entry window closes, the treasury advances the yield the stakes are expected to
 /// earn during the round (totalStake * roundAprBps * duration). It does not wait for the yield:
@@ -108,8 +111,7 @@ contract Rounds {
     }
 
     uint256 constant BPS = 10_000;
-    uint256 constant SECOND_BPS = 1_500;
-    uint256 constant THIRD_BPS = 500;
+    uint256 constant MAX_WINNERS = 10;
 
     uint256 constant MAX_FEE_BPS = 2_000;
     uint256 constant ACC = 1e18;
@@ -123,8 +125,11 @@ contract Rounds {
 
     uint256 public feeBps = 300;          // protocol fee, share of round profit
     uint256 public roundAprBps = 230;     // yield advanced to a round, per year, on its stakes
-    uint256 public userYieldBps = 4_650;  // share of vault yield to depositors (~2% of ~4.3%)
-    uint256 public blocksPerYear = 78_840_000; // 0.4 s blocks
+    uint256 public baseAprBps = 594;      // base yield to depositors, a year (Aave AUSD on Monad + 0.1%)
+    uint256 public blocksPerYear = 105_120_000; // 0.3 s blocks
+    uint256 public lastHarvest = block.number;
+    uint32 public callbackGas = 1_500_000; // Entropy callback gas: ~0.82M measured for 10 winners, deeper trees need more
+    uint16[] internal shares;             // prize shares in bps, one per place, sum = BPS
 
     uint64 public defaultEntryBlocks;
     uint64 public defaultDurationBlocks;
@@ -145,6 +150,7 @@ contract Rounds {
     mapping(uint256 => mapping(uint256 => address)) public userAt; // round => slot => user
     mapping(uint256 => mapping(uint256 => uint256)) internal tree;  // round => Fenwick tree of stakes
     mapping(uint256 => mapping(address => uint256)) public prizeOf;
+    mapping(uint256 => address[]) internal winnerList; // all winners, in place order
     mapping(uint256 => string) public descriptionOf;
     mapping(uint256 => string) public rulesOf;
     mapping(uint64 => uint256) public roundOfSequence;
@@ -179,7 +185,8 @@ contract Rounds {
     event EngineOpened(uint256 indexed id, uint256 margin);
     event EngineSkipped(uint256 indexed id, uint256 budget);
     event EngineReturned(uint256 indexed id, uint256 borrowed, uint256 returned);
-    event EconomicsSet(uint256 feeBps, uint256 roundAprBps, uint256 userYieldBps, uint256 blocksPerYear);
+    event EconomicsSet(uint256 feeBps, uint256 roundAprBps, uint256 baseAprBps, uint256 blocksPerYear);
+    event SharesSet(uint16[] shares);
     event Harvested(uint256 yield, uint256 toUsers, uint256 toTreasury);
     event BudgetAdvanced(uint256 indexed id, uint256 advance);
     event FeeTaken(uint256 indexed id, uint256 fee);
@@ -222,6 +229,21 @@ contract Rounds {
         priceSource = priceSource_;
         owner = msg.sender;
         _setDefaults(entryBlocks_, durationBlocks_);
+        uint16[] memory d = new uint16[](10);
+        (d[0], d[1], d[2]) = (5_000, 2_000, 1_000); // three large prizes
+        for (uint256 i = 3; i < 8; i++) d[i] = 300; // and seven small ones
+        (d[8], d[9]) = (250, 250);
+        _setShares(d);
+    }
+
+    function _setShares(uint16[] memory shares_) internal {
+        uint256 n = shares_.length;
+        if (n == 0 || n > MAX_WINNERS) revert BadAmount();
+        uint256 sum;
+        for (uint256 i; i < n; i++) sum += shares_[i];
+        if (sum != BPS) revert BadAmount();
+        shares = shares_;
+        emit SharesSet(shares_);
     }
 
     // ---------------------------------------------------------------- admin
@@ -242,16 +264,36 @@ contract Rounds {
         emit EngineSet(address(engine_));
     }
 
-    function setEconomics(uint256 feeBps_, uint256 roundAprBps_, uint256 userYieldBps_, uint256 blocksPerYear_)
+    function setEconomics(uint256 feeBps_, uint256 roundAprBps_, uint256 baseAprBps_, uint256 blocksPerYear_)
         external
         onlyOwner
     {
-        if (feeBps_ > MAX_FEE_BPS || userYieldBps_ > BPS || blocksPerYear_ == 0) revert BadAmount();
+        if (feeBps_ > MAX_FEE_BPS || baseAprBps_ > BPS || blocksPerYear_ == 0) revert BadAmount();
+        harvest(); // the old base rate applies up to now
         feeBps = feeBps_;
         roundAprBps = roundAprBps_;
-        userYieldBps = userYieldBps_;
+        baseAprBps = baseAprBps_;
         blocksPerYear = blocksPerYear_;
-        emit EconomicsSet(feeBps_, roundAprBps_, userYieldBps_, blocksPerYear_);
+        emit EconomicsSet(feeBps_, roundAprBps_, baseAprBps_, blocksPerYear_);
+    }
+
+    /// @notice Prize shares per place, in bps, 1 to MAX_WINNERS places, sum = BPS. Places nobody can
+    /// take (fewer players) go to the 1st place.
+    function setPrizeShares(uint16[] calldata shares_) external onlyOwner {
+        _setShares(shares_);
+    }
+
+    function setCallbackGas(uint32 gas_) external onlyOwner {
+        if (gas_ < 100_000) revert BadAmount();
+        callbackGas = gas_;
+    }
+
+    function prizeShares() external view returns (uint16[] memory) {
+        return shares;
+    }
+
+    function winnersOf(uint256 id) external view returns (address[] memory) {
+        return winnerList[id];
     }
 
     function withdrawFees(address to) external onlyOwner {
@@ -469,9 +511,15 @@ contract Rounds {
     function harvest() public {
         uint256 assets = vault.convertToAssets(vault.balanceOf(address(this)));
         uint256 liabilities = totalBalances + treasury + reserved + fees;
-        if (assets <= liabilities) return;
+        if (assets <= liabilities) {
+            lastHarvest = block.number;
+            return;
+        }
         uint256 yield_ = assets - liabilities;
-        uint256 toUsers = totalBalances == 0 ? 0 : yield_ * userYieldBps / BPS;
+        // Fixed base rate on balances, paid from the yield (never more than the vault earned).
+        uint256 owed = totalBalances * baseAprBps * (block.number - lastHarvest) / (BPS * blocksPerYear);
+        lastHarvest = block.number;
+        uint256 toUsers = owed < yield_ ? owed : yield_;
         if (toUsers > 0) {
             accYieldPerBalance += toUsers * ACC / totalBalances;
             totalBalances += toUsers;
@@ -582,7 +630,7 @@ contract Rounds {
     }
 
     function drawFee() external view returns (uint256) {
-        return entropy.getFeeV2();
+        return entropy.getFeeV2(callbackGas);
     }
 
     // ---------------------------------------------------------------- internal: rounds
@@ -714,9 +762,9 @@ contract Rounds {
 
     /// @dev Pays the Entropy fee from `value` and returns it.
     function _requestDraw(uint256 id, uint256 value) internal returns (uint256 fee) {
-        fee = entropy.getFeeV2();
+        fee = entropy.getFeeV2(callbackGas);
         if (value < fee) revert InsufficientFee();
-        uint64 sequence = entropy.requestV2{value: fee}();
+        uint64 sequence = entropy.requestV2{value: fee}(callbackGas);
         rounds[id].sequence = sequence;
         roundOfSequence[sequence] = id;
         emit DrawRequested(id, sequence);
@@ -727,16 +775,19 @@ contract Rounds {
     function _draw(uint256 id, Round storage r, bytes32 seed) internal {
         uint256 n = r.count;
         uint256 remaining = r.totalStake;
-        uint256[3] memory picked;
-        uint256[3] memory stakes;
+        uint256 places = shares.length;
+        uint256[] memory picked = new uint256[](places);
+        uint256[] memory stakes = new uint256[](places);
         uint256 k;
-        for (; k < 3 && remaining > 0; k++) {
+        // Different winners: a picked stake leaves the tree, so nobody is drawn twice.
+        for (; k < places && remaining > 0; k++) {
             uint256 ticket = uint256(keccak256(abi.encode(seed, k))) % remaining;
             uint256 idx = _treeFind(id, n, ticket);
             address w = userAt[id][idx];
             picked[k] = idx;
             stakes[k] = entries[id][w].stake;
-            r.winners[k] = w;
+            if (k < 3) r.winners[k] = w;
+            winnerList[id].push(w);
             _treeSub(id, n, idx, stakes[k]);
             remaining -= stakes[k];
         }
@@ -744,13 +795,18 @@ contract Rounds {
             _treeAdd(id, n, picked[i], stakes[i]);
         }
 
-        uint256 second = k > 1 ? r.budget * SECOND_BPS / BPS : 0;
-        uint256 third = k > 2 ? r.budget * THIRD_BPS / BPS : 0;
-        uint256[3] memory prize = [r.budget - second - third, second, third];
+        // Places 2..k get their share; the 1st place gets the rest (its own share plus places nobody took).
+        uint256 rest = r.budget;
+        uint256[] memory prize = new uint256[](k);
+        for (uint256 i = 1; i < k; i++) {
+            prize[i] = r.budget * shares[i] / BPS;
+            rest -= prize[i];
+        }
+        if (k > 0) prize[0] = rest;
         // Credit prizes now, so they earn base yield until the winner claims.
         r.accAtDraw = accYieldPerBalance;
         for (uint256 i; i < k; i++) {
-            address w = r.winners[i];
+            address w = winnerList[id][i];
             prizeOf[id][w] = prize[i];
             _accrue(w);
             balanceOf[w] += prize[i];

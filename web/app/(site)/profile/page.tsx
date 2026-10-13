@@ -8,7 +8,7 @@ import PlayAgainButton from "@/components/PlayAgainButton";
 import ShareButton from "@/components/ShareButton";
 import { useDisplayName } from "@/components/ConnectButton";
 import CopyAddress from "@/components/CopyAddress";
-import V1Balance from "@/components/V1Balance";
+import PreviousBalances from "@/components/V1Balance";
 import { Line, RowSkeleton } from "@/components/Skeletons";
 import { statusText } from "@/components/VaultCard";
 import { useBlock, useRounds, type RoundView } from "@/hooks/useRounds";
@@ -127,7 +127,7 @@ export default function Profile() {
         <div className="promise-line small">Your deposits always come back, right call or wrong.</div>
         {error && <div className="error small">{error}</div>}
       </div>
-      <V1Balance />
+      <PreviousBalances />
 
       <div className="tabs">
         <button className={tab === "active" ? "active" : ""} onClick={() => setTab("active")}>

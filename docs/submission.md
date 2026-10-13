@@ -17,7 +17,7 @@ Live app: https://saverounds.vercel.app · Code: https://github.com/kovdanielgh/
 **A perp trader on Monad who just got liquidated** and is afraid to open the next position. They still want to make market calls, and they still want the rare big win. Today every way to act on a call puts the deposit at risk.
 
 - **Why this market does not exist yet:** no-loss products (PoolTogether) give the deposit back, but the user cannot pick a side and nothing trades. Prediction markets and perps let you pick a side, but they take the deposit when you are wrong.
-- **What Rounds gives them:** pick up or down, keep every dollar, and a chance at a random high payoff. The prize pool trades at up to 15x on Perpl, a rollover can carry it 3 rounds in a row, and 80% of it goes to one winner. Small, rare, big wins on top of a deposit that never trades.
+- **What Rounds gives them:** pick up or down, keep every dollar, and a chance at a random high payoff. The prize pool trades at up to 15x on Perpl, a rollover can carry it 3 rounds in a row, and half of it goes to the 1st place and the rest to nine more winners. Small, rare, big wins on top of a deposit that never trades.
 - **Counterparties:** Perpl is the execution venue (a "no-loss mode" that brings it new traders), Agora's AUSD on Aave is the yield source on mainnet.
 
 ## The problem
@@ -34,8 +34,8 @@ Rounds is a no-loss round on Monad.
 
 1. **You deposit dollars and pick a side**, for example Bulls or Bears on BTC.
 2. **Only the prize pool trades, your deposit does not.** On testnet Rounds pays the pool. On mainnet the pool is the interest that all deposits earn during the round: the treasury advances it when the entry window closes. The contract trades only the pool on Perpl, an on-chain order book on Monad, with up to 15x leverage.
-3. **If your side is right, three depositors win the result:** 80%, 15% and 5%. Pyth Entropy draws them, weighted by stake.
-4. **Your deposit always comes back**, plus base yield of about 2% a year.
+3. **If your side is right, up to 10 different depositors win the result:** three big prizes (50%, 20%, 10%) and seven small ones (3% or 2.5% each), so more people win something. Pyth Entropy draws them, weighted by stake.
+4. **Your deposit always comes back**, plus a base yield for everyone (target on mainnet: Aave + 0.1%, about 5.9% a year).
 
 Your deposit never trades. Only the prize pool does.
 
@@ -51,7 +51,7 @@ Your deposit never trades. Only the prize pool does.
 | PoolTogether | deposit comes back | small prizes (about 2.5% a year), pure luck, no choice |
 | Premium Bonds (UK) | deposit comes back, state guarantee | UK only, no crypto, no choice of side |
 
-**Rounds:** the user picks a side, the prize trades as a real position on Perpl, and the deposit always comes back. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 51 tests.
+**Rounds:** the user picks a side, the prize trades as a real position on Perpl, and the deposit always comes back. Proof: real 3x–15x positions on Perpl testnet, verified contracts, 55 tests.
 
 ## Why only on Monad
 
@@ -67,7 +67,8 @@ Your deposit never trades. Only the prize pool does.
 - Anyone can call `setStrike` and `settle`, but only in a 150-block window after the phase ends. After the window, only the owner can call them.
 - Pyth Entropy gives the random number for the draw.
 - User deposits never go to the trading engine. The maximum loss is the round budget.
-- 51 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
+- **A stop-loss guard closes a position before Perpl liquidates it.** The keeper reads every open position every 5 seconds. At 70% loss of its margin, it closes the position through the engine. What is left goes back into the prize pool, instead of burning in a liquidation. Tested live on round #179.
+- 55 Foundry tests pass, 9 of them are fork tests against the real Perpl exchange.
 - All contracts are verified on MonadScan.
 
 ## What works today (Monad testnet)
@@ -112,6 +113,59 @@ The latest answer in the feedback form: clear what happens to the money: **Yes**
 - **Next 2 weeks (judging):** Season 0 with traders from the Monad community, 3 tests with people who never saw the app, weekly fixes from the feedback form.
 - **Mainnet beta:** Aave AUSD as the yield source, a deposit cap, and a "no-loss mode" partnership with Perpl.
 - **Target for the first 60 days after mainnet:** 300 depositors, 100k AUSD in deposits, and deposits that stay after the third round as the main metric.
+
+## Why not just lend USD on Aave or Morpho?
+
+That is our real competitor: the same deposit, the same safety, a flat ~5.8% a year (Aave AUSD on Monad), no lock. Rounds puts deposits in the best AUSD vault (~7.5%), gives everyone a bit more than Aave, and turns the rest into prizes:
+
+| 1,000 USD for a year | Guaranteed | Expected on top | Shape |
+|---|---|---|---|
+| Aave AUSD | ~58 USD | 0 | flat, no lock |
+| Rounds (best AUSD vault, ~7.5%) | ~59 USD (Aave + 0.1%) | ~16 USD | everyone beats Aave a little, a few win big |
+
+What people get instead of a flat 4%: a call on the market and a chance at a large prize. The money is locked only for the round (from 15 minutes), you can exit before entry closes, and money outside a round can be taken out anytime.
+
+Prize size at scale, 1M USD deposited (~1.56% of yearly yield goes to prizes): a daily round ~43 USD, a weekly round ~300 USD, a monthly round ~1,300 USD, before the Perpl trade multiplies it. See the mainnet yield plan below.
+
+## Mainnet yield plan (numbers read on Monad mainnet, 13 Oct)
+
+| Source | Yield | How we know |
+|---|---|---|
+| Aave AUSD (the benchmark) | 5.84% (3.37 base + 2.47 rewards) | DefiLlama |
+| Best AUSD vaults: Euler, Morpho, Upshift | 7.1–8.9% | DefiLlama |
+| MON liquid staking (Kintsu sMON) | 11.56% | on-chain: sMON/MON rate over 5.3 days |
+| MON short on Perpl: funding | −1.3% a year on average (−4 … +4 per 100k per interval) | on-chain: Perpl `getPerpetualInfo`, 28 samples over a week |
+| Perpl MON open interest | ~2.9M MON ≈ 71k USD | on-chain |
+
+```mermaid
+flowchart LR
+    U["Users<br/>deposit AUSD"] --> R["Rounds"]
+    R --> V["Core: best AUSD vault<br/>~7.5–8.9%, no cap"]
+    R -. "treasury only,<br/>hard budget cap" .-> S["Special strategies<br/>MON basis now,<br/>ETH / BTC staking later"]
+    A["Agora partner rewards<br/>for AUSD float"] -.-> R
+    V --> Y{"Yield"}
+    S --> Y
+    Y -- "base: benchmark + 0.1%<br/>~5.9% to every depositor" --> U
+    Y -- "everything above" --> P["Prize pool"]
+    P --> E["Perpl position 3x–15x<br/>stop-loss at 70%"]
+    E -- "right call" --> W["Winners"]
+    E -- "wrong call" --> T["Treasury"]
+```
+
+**Strategies and their caps.** User deposits go only to the core vault. Special strategies run on treasury money with a hard budget, so a strategy can lose only its own budget, never a deposit.
+
+| Strategy | Expected now | Budget cap | Status |
+|---|---|---|---|
+| Core AUSD vault (Euler / Morpho / Aave) | ~7.5–8.9% | none | mainnet beta |
+| Agora rewards for AUSD float | on top, terms open | — | in talks |
+| MON basis: sMON (11.56%) + equal MON short on Perpl | ~7% net at today's funding | max 10% of the treasury and below Perpl MON open interest | special, treasury only |
+| ETH / BTC staking + short (same pattern) | to measure | own cap each | later |
+
+**At 1M USD deposited:** the core vault (~7.5%) earns ~75,000 USD a year. ~59,400 USD (Aave + 0.1%) goes to every depositor as base yield, ~15,600 USD a year (~1,300 USD a month) becomes prizes before the Perpl trade multiplies them. Honest note: the MON basis does not beat the best AUSD vaults today (funding is slightly negative, and Perpl's MON market is small), so it stays a capped special strategy.
+
+**On testnet** the yield vault is a mock. It now pays 7.5% (the rate of the best AUSD vaults), depositors get ~5.9%, and 1.56% of stakes a year funds the prizes. Today the base is a share of the vault yield. A fixed base rate (benchmark + 0.1%) per balance is the next contract change.
+
+A Perpl mentor reviewed Rounds with us and gave GTM feedback: "know your enemy, and your enemy is stable yield."
 
 ## Partners we are talking to
 
