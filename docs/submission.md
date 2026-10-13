@@ -152,6 +152,40 @@ flowchart LR
     E -- "wrong call" --> T["Treasury"]
 ```
 
+### Yield scenarios: worst, typical, best (last 90 days, DefiLlama daily APY)
+
+We checked how each real AUSD vault on Monad mainnet behaved over the last 90 days, not one snapshot. "Worst 10% of days" means the rate was at or below this number on 10% of the days.
+
+| Vault (TVL, days of data) | Worst 10% of days | Typical (median) | Best 10% of days | Range seen |
+|---|---|---|---|---|
+| Aave v3 AUSD, the benchmark (3.2M, 90d) | 5.80% | 5.96% | 8.31% | 2.68–10.47% |
+| Euler eAUSD-16 (1.6M, 90d) | 7.20% | 8.20% | 10.33% | 5.73–11.90% |
+| Euler eAUSD-17 (1.4M, 90d) | 6.27% | 6.58% | 7.73% | 6.15–7.97% |
+| Morpho CSA AUSD (3.0M, 90d) | 5.70% | 7.09% | 8.07% | 3.30–9.83% |
+| Accountable AUSD (30.8M, 79d) | 7.11% | 8.00% | 8.15% | 0.00–8.25% |
+| Upshift earnAUSD (19.2M, 90d) | 3.66% | 5.49% | 7.37% | 2.99–7.82% |
+| Morpho Y10K AUSD (5.6M, 20d) | 5.91% | 8.29% | 8.88% | 2.16–11.16% |
+| Upshift earnAUSD loop, a looping vault (2.4M, 14d) | 0.60% | 7.67% | 9.23% | 0.00–13.62% |
+
+**What Rounds would pay at 1M USD**, with a base of 5.94% (Aave + 0.1%) to every depositor and the rest as prizes:
+
+| At 1M USD in the vault | Worst 10% | Typical | Best 10% |
+|---|---|---|---|
+| Euler eAUSD-16 | base 5.94%, prizes 13k/yr (1.0k/mo) | base 5.94%, prizes 23k/yr (1.9k/mo) | base 5.94%, prizes 44k/yr (3.7k/mo) |
+| Accountable AUSD | base 5.94%, prizes 12k/yr (1.0k/mo) | base 5.94%, prizes 21k/yr (1.7k/mo) | base 5.94%, prizes 22k/yr (1.8k/mo) |
+| Morpho CSA AUSD | base 5.70%, no prizes | base 5.94%, prizes 12k/yr (1.0k/mo) | base 5.94%, prizes 21k/yr (1.8k/mo) |
+| Upshift earnAUSD | base 3.66%, no prizes | base 5.49%, no prizes | base 5.94%, prizes 14k/yr (1.2k/mo) |
+
+How to read it:
+
+- **The base is never more than the vault earns.** In the worst case of a weak vault the base falls below Aave and there are no prizes; the deposit itself is still safe.
+- **The best vaults beat Aave on most days.** With Euler or Accountable, prizes stay positive even in the worst 10% of days.
+- **Looping vaults** (they borrow against their own deposit and lend again) show the best upside, up to 13.6%, but also the worst days, down to 0%, and a short history. A very good case is possible but less likely, so they are not the core vault.
+- **Capacity matters.** Several of the best vaults hold 1.4–3M USD; 1M USD more would lower their rate. At scale the core is split across vaults.
+- **MON staking** (Kintsu sMON 11.1–13.9%, FastLane shMON 11.1–13.8% on 80% of days) is higher but in MON, not dollars, so it stays a capped treasury strategy.
+
+**Where this goes next.** We will keep looking for better yield strategies and partnerships to raise the average jackpot and the base APY: Agora's partner rewards for AUSD float, the best AUSD vaults, capped treasury strategies (MON basis now, ETH or BTC staking later). With today's vaults the prizes are about 12–23k USD a year per 1M USD; every extra percent of yield adds 10k USD a year to the prizes.
+
 **Strategies and their caps.** User deposits go only to the core vault. Special strategies run on treasury money with a hard budget, so a strategy can lose only its own budget, never a deposit.
 
 | Strategy | Expected now | Budget cap | Status |
